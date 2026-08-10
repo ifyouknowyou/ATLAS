@@ -1,0 +1,33 @@
+{
+  "name": "atlas",
+  "private": true,
+  "version": "0.1.0",
+  "description": "ATLAS — AI Intelligence & Investigation Platform (Phase 1 foundation)",
+  "license": "UNLICENSED",
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "build": "npm run build -w @atlas/shared && npm run build -w @atlas/api && npm run build -w @atlas/web",
+    "typecheck": "npm run build -w @atlas/shared && npm run typecheck -w @atlas/api && npm run typecheck -w @atlas/web",
+    "lint": "npm run lint -w @atlas/api && npm run lint -w @atlas/web",
+    "test": "npm run build -w @atlas/shared && npm run test -w @atlas/shared && npm run test -w @atlas/api && npm run test -w @atlas/web",
+    "test:unit": "npm run test:unit -w @atlas/shared && npm run test:unit -w @atlas/api",
+    "test:integration": "npm run test:integration -w @atlas/api",
+    "db:up": "docker compose up -d atlas-postgres",
+    "db:sync": "docker compose up -d atlas-postgres atlas-postgres-test",
+    "db:migrate": "npm run prisma:migrate --workspace @atlas/api",
+    "db:reset": "npm run prisma:reset --workspace @atlas/api",
+    "dev": "concurrently -n api,web -c blue,green \"npm:dev:api\" \"npm:dev:web\"",
+    "dev:api": "npm run start:dev --workspace @atlas/api",
+    "dev:web": "npm run dev --workspace @atlas/web",
+    "gate": "npm run typecheck && npm run lint && npm run test && npm run test:integration && npm run build"
+  },
+  "devDependencies": {
+    "concurrently": "^9.0.0"
+  }
+}

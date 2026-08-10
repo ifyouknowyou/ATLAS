@@ -1,0 +1,498 @@
+// ATLAS — Phase 1 + Phase 2 data foundation.
+//
+// Phase 2 adds investigation intelligence: classification/owner/archive on
+// investigations, entity display meta + status + confidence, a richer
+// relationship model (type/direction/confidence), evidence metadata + integrity
+// fields, note visibility, investigation members, tasks, and investigation-
+// scoped activity events.
+//
+// Tenancy: every organization-owned resource carries `organizationId` and
+// (where meaningful) `workspaceId`. Ownership checks are performed server-side;
+// the frontend can never bypass them.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ---------------------------------------------------------------------------
+// Enums (mirror packages/shared — parity is asserted by a unit test)
+// ---------------------------------------------------------------------------
+
+enum Role {
+  OWNER
+  ADMIN
+  ANALYST
+  INVESTIGATOR
+  VIEWER
+}
+
+enum EntityType {
+  PERSON
+  ORGANIZATION
+  DOMAIN
+  IP_ADDRESS
+  LOCATION
+  DEVICE
+  ACCOUNT
+  DOCUMENT
+  EVENT
+  OTHER
+}
+
+enum InvestigationStatus {
+  DRAFT
+  ACTIVE
+  PAUSED
+  COMPLETED
+  ARCHIVED
+}
+
+enum Classification {
+  PUBLIC
+  INTERNAL
+  CONFIDENTIAL
+  RESTRICTED
+}
+
+enum InvestigationPriority {
+  LOW
+  MEDIUM
+  HIGH
+  CRITICAL
+}
+
+enum EntityStatus {
+  ACTIVE
+  ARCHIVED
+}
+
+enum RelationshipType {
+  ASSOCIATED_WITH
+  OWNS
+  WORKS_FOR
+  LOCATED_AT
+  USES
+  CONTROLS
+  CONNECTED_TO
+  MEMBER_OF
+  RELATED_TO
+  OBSERVED_WITH
+  CUSTOM
+}
+
+enum RelationshipDirection {
+  DIRECTED
+  UNDIRECTED
+}
+
+enum EvidenceType {
+  DOCUMENT
+  IMAGE
+  VIDEO
+  AUDIO
+  ARCHIVE
+  WEB_ARTIFACT
+  LOG
+  DATASET
+  OTHER
+}
+
+enum EvidenceStatus {
+  PENDING
+  AVAILABLE
+  ARCHIVED
+  RESTRICTED
+}
+
+enum NoteVisibility {
+  INVESTIGATION
+  PRIVATE
+}
+
+enum InvestigationMemberRole {
+  LEAD
+  ANALYST
+  CONTRIBUTOR
+  VIEWER
+}
+
+enum TaskStatus {
+  TODO
+  IN_PROGRESS
+  BLOCKED
+  DONE
+}
+
+enum ReportStatus {
+  DRAFT
+  PUBLISHED
+}
+
+// ---------------------------------------------------------------------------
+// Identity & tenancy
+// ---------------------------------------------------------------------------
+
+model User {
+  id           String       @id @default(uuid())
+  email        String       @unique
+  passwordHash String
+  displayName  String
+  isActive     Boolean      @default(true)
+  createdAt    DateTime     @default(now())
+  updatedAt    DateTime     @updatedAt
+
+  memberships              Membership[]
+  activeSessions           ActiveSession[]
+  createdOrganizations     Organization[]
+  createdWorkspaces        Workspace[]
+  createdInvestigations    Investigation[] @relation("inv_createdBy")
+  updatedInvestigations    Investigation[] @relation("inv_updatedBy")
+  ownedInvestigations      Investigation[] @relation("inv_owner")
+  createdEntities          Entity[]
+  createdRelationships     Relationship[]
+  createdEvidence          Evidence[]
+  createdNotes             Note[]         @relation("note_createdBy")
+  updatedNotes             Note[]         @relation("note_updatedBy")
+  createdReports           Report[]
+  createdTimelineEvents    TimelineEvent[]
+  investigationMemberships     InvestigationMember[] @relation("im_user")
+  createdInvestigationMembers  InvestigationMember[] @relation("im_createdBy")
+  activityEvents               ActivityEvent[]
+  assignedTasks                Task[]         @relation("task_assignee")
+  createdTasks                 Task[]         @relation("task_creator")
+
+  @@index([email])
+}
+
+model Organization {
+  id           String   @id @default(uuid())
+  name         String
+  slug         String   @unique
+  isDemo       Boolean  @default(false)
+  settings     Json?
+  createdById  String?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  createdBy     User?    @relation(fields: [createdById], references: [id])
+  memberships   Membership[]
+  workspaces    Workspace[]
+  investigations Investigation[]
+  entities      Entity[]
+  relationships Relationship[]
+  evidence      Evidence[]
+  notes         Note[]
+  reports       Report[]
+  timelineEvents TimelineEvent[]
+  events        ActivityEvent[]
+
+  @@index([slug])
+}
+
+model Workspace {
+  id             String       @id @default(uuid())
+  name           String
+  description    String?
+  organizationId String
+  createdById    String
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+
+  organization  Organization  @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  createdBy     User          @relation(fields: [createdById], references: [id])
+  memberships   Membership[]
+  investigations Investigation[]
+  entities      Entity[]
+  events        ActivityEvent[]
+
+  @@unique([organizationId, name])
+  @@index([organizationId])
+}
+
+model Membership {
+  id                String    @id @default(uuid())
+  userId            String
+  organizationId    String
+  role              Role
+  activeWorkspaceId String?
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+
+  user            User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  organization    Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  activeWorkspace Workspace?   @relation(fields: [activeWorkspaceId], references: [id], onDelete: SetNull)
+
+  @@unique([userId, organizationId])
+  @@index([organizationId])
+}
+
+model ActiveSession {
+  sid       String   @id
+  userId    String
+  issuedAt  DateTime @default(now())
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+// ---------------------------------------------------------------------------
+// Intelligence domain
+// ---------------------------------------------------------------------------
+
+model Investigation {
+  id             String                  @id @default(uuid())
+  title          String
+  description    String?
+  summary        String?
+  status         InvestigationStatus     @default(DRAFT)
+  priority       InvestigationPriority   @default(MEDIUM)
+  classification Classification          @default(INTERNAL)
+  organizationId String
+  workspaceId    String?
+  ownerId        String?
+  createdById    String
+  updatedById    String?
+  archivedAt     DateTime?
+  createdAt      DateTime                @default(now())
+  updatedAt      DateTime                @updatedAt
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  workspace    Workspace?  @relation(fields: [workspaceId], references: [id])
+  owner        User?       @relation("inv_owner", fields: [ownerId], references: [id])
+  createdBy    User        @relation("inv_createdBy", fields: [createdById], references: [id])
+  updatedBy    User?       @relation("inv_updatedBy", fields: [updatedById], references: [id])
+
+  entities       Entity[]
+  relationships  Relationship[]
+  evidence       Evidence[]
+  notes          Note[]
+  timelineEvents TimelineEvent[]
+  reports        Report[]
+  members        InvestigationMember[]
+  tasks          Task[]
+  activity       ActivityEvent[]
+
+  @@index([organizationId, workspaceId])
+  @@index([status, archivedAt])
+  @@index([title])
+}
+
+model InvestigationMember {
+  id              String                  @id @default(uuid())
+  investigationId String
+  userId          String
+  role            InvestigationMemberRole @default(VIEWER)
+  createdById     String
+  createdAt       DateTime                @default(now())
+  updatedAt       DateTime                @updatedAt
+
+  investigation Investigation @relation(fields: [investigationId], references: [id], onDelete: Cascade)
+  user          User          @relation("im_user", fields: [userId], references: [id], onDelete: Cascade)
+  createdBy     User          @relation("im_createdBy", fields: [createdById], references: [id])
+
+  @@unique([investigationId, userId])
+  @@index([userId])
+}
+
+model Task {
+  id               String                @id @default(uuid())
+  investigationId  String
+  title            String
+  description      String?
+  status           TaskStatus            @default(TODO)
+  priority         InvestigationPriority @default(MEDIUM)
+  assigneeId       String?
+  createdById      String
+  dueAt            DateTime?
+  createdAt        DateTime              @default(now())
+  updatedAt        DateTime              @updatedAt
+
+  investigation Investigation @relation(fields: [investigationId], references: [id], onDelete: Cascade)
+  assignee      User?         @relation("task_assignee", fields: [assigneeId], references: [id])
+  createdBy     User          @relation("task_creator", fields: [createdById], references: [id])
+
+  @@index([investigationId, status])
+  @@index([assigneeId])
+}
+
+model Entity {
+  id                String       @id @default(uuid())
+  type              EntityType
+  name              String
+  displayName       String?
+  description       String?
+  summary           String?
+  status            EntityStatus @default(ACTIVE)
+  confidence        Int          @default(0)
+  uri               String?
+  tags              String[]     @default([])
+  properties        Json?
+  latitude          Float?
+  longitude         Float?
+  organizationId    String
+  workspaceId       String?
+  investigationId   String?
+  createdById       String
+  createdAt         DateTime     @default(now())
+  updatedAt         DateTime     @updatedAt
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  workspace    Workspace?  @relation(fields: [workspaceId], references: [id])
+  investigation Investigation? @relation(fields: [investigationId], references: [id])
+  createdBy    User        @relation(fields: [createdById], references: [id])
+
+  outgoingRelationships Relationship[] @relation("source")
+  incomingRelationships Relationship[] @relation("target")
+  notes                 Note[]
+  timelineEvents        TimelineEvent[]
+
+  @@index([organizationId, type, status])
+  @@index([investigationId])
+  @@index([name])
+}
+
+model Relationship {
+  id               String                @id @default(uuid())
+  kind             RelationshipType      @default(RELATED_TO)
+  direction        RelationshipDirection @default(UNDIRECTED)
+  confidence       Int                   @default(0)
+  description      String?
+  organizationId   String
+  investigationId  String?
+  sourceId         String
+  targetId         String
+  metadata         Json?
+  createdById      String
+  createdAt        DateTime              @default(now())
+  updatedAt        DateTime              @updatedAt
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  investigation Investigation? @relation(fields: [investigationId], references: [id])
+  source       Entity       @relation("source", fields: [sourceId], references: [id], onDelete: Cascade)
+  target       Entity       @relation("target", fields: [targetId], references: [id], onDelete: Cascade)
+  createdBy    User         @relation(fields: [createdById], references: [id])
+
+  @@index([organizationId, kind])
+  @@index([sourceId, targetId])
+  @@index([investigationId])
+}
+
+model Evidence {
+  id               String         @id @default(uuid())
+  name             String
+  kind             EvidenceType   @default(OTHER)
+  title            String?
+  description      String?
+  source           String?
+  classification   Classification @default(INTERNAL)
+  hash             String?
+  mimeType         String?
+  size             Int?
+  status           EvidenceStatus @default(PENDING)
+  reference        String?
+  content          String?
+  collectedAt      DateTime?
+  organizationId   String
+  investigationId  String?
+  createdById      String
+  createdAt        DateTime       @default(now())
+  updatedAt        DateTime       @updatedAt
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  investigation Investigation? @relation(fields: [investigationId], references: [id])
+  createdBy     User        @relation(fields: [createdById], references: [id])
+
+  @@index([organizationId, kind, status])
+  @@index([investigationId])
+  @@index([createdById])
+}
+
+model Note {
+  id               String          @id @default(uuid())
+  title            String
+  body             String
+  visibility       NoteVisibility  @default(INVESTIGATION)
+  organizationId   String
+  investigationId  String?
+  entityId         String?
+  createdById      String
+  updatedById      String?
+  createdAt        DateTime        @default(now())
+  updatedAt        DateTime        @updatedAt
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  investigation Investigation? @relation(fields: [investigationId], references: [id])
+  entity        Entity?     @relation(fields: [entityId], references: [id])
+  createdBy     User        @relation("note_createdBy", fields: [createdById], references: [id])
+  updatedBy     User?       @relation("note_updatedBy", fields: [updatedById], references: [id])
+
+  @@index([organizationId, investigationId, visibility])
+}
+
+model Report {
+  id               String       @id @default(uuid())
+  title            String
+  status           ReportStatus @default(DRAFT)
+  summary          String?
+  organizationId   String
+  investigationId  String?
+  createdById      String
+  createdAt        DateTime     @default(now())
+  publishedAt      DateTime?
+  updatedAt        DateTime     @updatedAt
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  investigation Investigation? @relation(fields: [investigationId], references: [id])
+  createdBy     User        @relation(fields: [createdById], references: [id])
+
+  @@index([organizationId, investigationId])
+}
+
+model TimelineEvent {
+  id               String    @id @default(uuid())
+  title            String
+  description      String?
+  kind             String    @default("EVENT")
+  occurredAt       DateTime
+  organizationId   String
+  investigationId  String?
+  entityId         String?
+  createdById      String
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  investigation Investigation? @relation(fields: [investigationId], references: [id])
+  entity        Entity?    @relation(fields: [entityId], references: [id])
+  createdBy     User       @relation(fields: [createdById], references: [id])
+
+  @@index([organizationId, investigationId, occurredAt])
+}
+
+model ActivityEvent {
+  id               String    @id @default(uuid())
+  type             String
+  message          String
+  metadata         Json?
+  organizationId   String
+  workspaceId      String?
+  investigationId  String?
+  userId           String?
+  createdAt        DateTime  @default(now())
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  workspace    Workspace?  @relation(fields: [workspaceId], references: [id])
+  investigation Investigation? @relation(fields: [investigationId], references: [id])
+  user         User?       @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([organizationId, createdAt])
+  @@index([investigationId, createdAt])
+}

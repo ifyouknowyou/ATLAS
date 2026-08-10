@@ -1,0 +1,94 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  color-scheme: dark;
+}
+
+html,
+body {
+  height: 100%;
+}
+
+body {
+  @apply bg-void text-slate-200 antialiased;
+  background-image:
+    radial-gradient(ellipse 90% 70% at 50% -20%, rgba(24, 52, 110, 0.28), transparent 60%),
+    radial-gradient(ellipse 60% 50% at 100% 100%, rgba(20, 70, 90, 0.14), transparent 60%),
+    linear-gradient(rgba(120, 160, 210, 0.045) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(120, 160, 210, 0.045) 1px, transparent 1px);
+  background-size:
+    auto,
+    auto,
+    42px 42px,
+    42px 42px;
+  background-attachment: fixed;
+}
+
+::selection {
+  background: rgba(79, 216, 200, 0.28);
+  color: #eafcf8;
+}
+
+* {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(79, 216, 200, 0.35) rgba(10, 16, 26, 0.6);
+}
+
+*::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+*::-webkit-scrollbar-thumb {
+  background: rgba(79, 216, 200, 0.28);
+  border-radius: 999px;
+}
+*::-webkit-scrollbar-track {
+  background: rgba(10, 16, 26, 0.6);
+}
+
+@layer components {
+  .panel {
+    @apply rounded-lg border border-void-line bg-void-panel/70 backdrop-blur-sm shadow-panel;
+  }
+
+  .panel-title {
+    @apply font-mono text-[11px] uppercase tracking-[0.22em] text-slate-tech;
+  }
+
+  .mono-label {
+    @apply font-mono text-[10px] uppercase tracking-[0.28em] text-slate-tech/80;
+  }
+
+  .tech-input {
+    @apply w-full rounded-md border border-void-line bg-void-raised px-3 py-2 text-sm text-slate-100
+      placeholder:text-slate-tech/50 focus:border-phosphor-dim focus:outline-none focus:ring-1
+      focus:ring-phosphor-faint;
+  }
+
+  .tech-button {
+    @apply inline-flex items-center justify-center gap-2 rounded-md border border-void-line
+      bg-void-raised px-4 py-2 text-sm font-medium text-slate-200 transition-colors
+      hover:border-phosphor-faint hover:text-phosphor disabled:cursor-not-allowed
+      disabled:opacity-50;
+  }
+
+  .tech-button-primary {
+    @apply tech-button border-phosphor-faint bg-phosphor-dim/15 text-phosphor
+      hover:border-phosphor hover:bg-phosphor-dim/25;
+  }
+
+  .tech-button-danger {
+    @apply tech-button border-danger/40 text-danger hover:border-danger hover:bg-danger/10;
+  }
+
+  .signal-text {
+    @apply font-mono text-phosphor;
+    text-shadow: 0 0 18px rgba(79, 216, 200, 0.55);
+  }
+
+  .hairline {
+    @apply border-t border-void-line;
+  }
+}
