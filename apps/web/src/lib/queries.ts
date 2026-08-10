@@ -54,6 +54,7 @@ export function useInvestigations(params?: {
   order?: string;
   archived?: boolean;
   limit?: number;
+  offset?: number;
 }) {
   const token = useToken();
   return useQuery({
@@ -372,4 +373,3 @@ export function useRemoveMember() {
   });
 }
 
-export type { MutationResult };

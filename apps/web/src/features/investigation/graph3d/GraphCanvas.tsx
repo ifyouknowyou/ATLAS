@@ -4,7 +4,6 @@ import {
   useEffect,
   useMemo,
   useRef,
-  useState,
 } from 'react';
 import { useFrame } from '@react-three/fiber';
 import { Line, OrbitControls, Stars } from '@react-three/drei';
@@ -27,6 +26,7 @@ interface SceneInput {
     sourceId: string;
     targetId: string;
     kind: string;
+    confidence: number;
   }>;
 }
 
@@ -49,7 +49,7 @@ export function GraphScene({ nodeInputs, edgeInputs }: SceneInput) {
     [edgeInputs.length],
   );
 
-  const positions = useMemo(() => layoutNodes(nodes), [nodes, nodes.length]);
+  const positions = useMemo(() => layoutNodes(nodes), [nodes]);
 
   const lineSets = useMemo(
     () =>

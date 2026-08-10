@@ -1,7 +1,6 @@
 import {
   ForbiddenException,
   Injectable,
-  NotFoundException,
 } from '@nestjs/common';
 import { InvestigationMemberRole } from '@prisma/client';
 import type { Permission } from '@atlas/shared';

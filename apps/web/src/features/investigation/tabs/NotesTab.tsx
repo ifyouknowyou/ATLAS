@@ -33,7 +33,7 @@ export function NotesTab({ id }: { id: string }) {
                   {String(note.visibility)}
                 </StatusBadge>
               </div>
-              {note.body && <p className="mt-1.5 whitespace-pre-wrap text-[11px] text-slate-tech">{String(note.body)}</p>}
+              {String(note.body ?? '') && <p className="mt-1.5 whitespace-pre-wrap text-[11px] text-slate-tech">{String(note.body)}</p>}
               <div className="mt-2 font-mono text-[10px] text-slate-tech/60">
                 {(note.createdBy as { displayName?: string } | null)?.displayName ?? '—'}
               </div>

@@ -190,6 +190,5 @@ function describeRelationship(entityId: string, rel: Record<string, unknown>): s
   const source = rel.source as { id: string; name: string } | undefined;
   const target = rel.target as { id: string; name: string } | undefined;
   if (!source || !target) return '—';
-  const others = [source, target].filter((e) => e.id !== entityId);
   return `${source.id === entityId ? target.name : source.name} · ${String(rel.kind ?? '')}`;
 }

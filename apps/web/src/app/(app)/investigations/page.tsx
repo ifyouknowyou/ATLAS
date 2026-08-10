@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import {
   Archive,
@@ -67,7 +67,7 @@ export default function InvestigationsPage() {
   const items = query.data?.items ?? [];
   const total = query.data?.total ?? 0;
 
-  const recent = useMemo(() => recentViewed.list(), [page]);
+  const recent = recentViewed.list();
 
   // Keep critical query state shareable via the URL.
   useEffect(() => {

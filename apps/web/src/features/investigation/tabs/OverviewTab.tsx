@@ -8,7 +8,6 @@ import { InvestigationGraph } from '../graph3d/GraphViewport';
 import { formatWhen } from '@/lib/presentation';
 
 export function OverviewTab({ id }: { id: string }) {
-  const router = useRouter();
   const { data, isLoading } = useDashboard(id);
 
   if (isLoading || !data) {
@@ -27,6 +26,7 @@ export function OverviewTab({ id }: { id: string }) {
     sourceId: String(e.sourceId),
     targetId: String(e.targetId),
     kind: String(e.kind),
+    confidence: Number(e.confidence ?? 0),
   }));
   const activity = data.recentActivity ?? [];
 

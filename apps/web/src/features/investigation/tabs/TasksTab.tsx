@@ -6,9 +6,7 @@ import { useCreateTask, usePatchTask, useTasks } from '@/lib/queries';
 import { ApiError } from '@/lib/api-client';
 import { Panel } from '@/components/ui/Panel';
 import { Button } from '@/components/ui/Button';
-import { StatusBadge } from '@/components/ui/StatusBadge';
 import { Spinner } from '@/components/ui/Spinner';
-import { cn } from '@/lib/cn';
 import { formatWhen } from '@/lib/presentation';
 
 const COLUMNS = ['TODO', 'IN_PROGRESS', 'BLOCKED', 'DONE'] as const;
@@ -56,7 +54,7 @@ export function TasksTab({ id }: { id: string }) {
                         →
                       </button>
                     </div>
-                    {task.dueAt && (
+                    {String(task.dueAt ?? '') && (
                       <div className="mt-1 font-mono text-[9px] text-slate-tech/60">due {formatWhen(String(task.dueAt))}</div>
                     )}
                   </div>

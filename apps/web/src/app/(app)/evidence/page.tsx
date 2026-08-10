@@ -84,7 +84,7 @@ export default function EvidencePage() {
                   <tr key={String(ev.id)} className="border-b border-void-line/50 hover:bg-void-raised">
                     <td className="px-3 py-3">
                       <div className="font-mono text-xs text-slate-100">{String(ev.name)}</div>
-                      {ev.description && <div className="mt-0.5 max-w-md truncate text-[11px] text-slate-tech">{String(ev.description)}</div>}
+                      {String(ev.description ?? '') && <div className="mt-0.5 max-w-md truncate text-[11px] text-slate-tech">{String(ev.description)}</div>}
                     </td>
                     <td className="px-3 py-3"><StatusBadge tone="neutral">{String(ev.kind)}</StatusBadge></td>
                     <td className="px-3 py-3">

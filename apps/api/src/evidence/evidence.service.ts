@@ -121,11 +121,7 @@ export class EvidenceService {
     evidenceId: string,
     dto: UpdateEvidenceDto,
   ) {
-    const evidence = await this.requireEvidence(
-      principal,
-      evidenceId,
-      'evidence.update',
-    );
+    await this.requireEvidence(principal, evidenceId, 'evidence.update');
 
     const updated = await this.prisma.evidence.update({
       where: { id: evidenceId },

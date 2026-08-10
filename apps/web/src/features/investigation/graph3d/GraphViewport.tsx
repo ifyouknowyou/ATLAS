@@ -3,7 +3,7 @@
 import dynamic from 'next/dynamic';
 import { useState } from 'react';
 import Link from 'next/link';
-import { Crosshair, Eye, EyeOff } from 'lucide-react';
+import { Crosshair, EyeOff } from 'lucide-react';
 import { cn } from '@/lib/cn';
 import type { GraphEdge, GraphNode } from './layout';
 import { nodeColor } from './layout';

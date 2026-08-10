@@ -5,7 +5,7 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
-import { InvestigationMemberRole, Prisma } from '@prisma/client';
+import { Prisma } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import { WorkspacesService } from '../workspaces/workspaces.service';
 import { toPage, PageQueryDto } from '../common/pagination.dto';
@@ -179,11 +179,7 @@ export class InvestigationsService {
     investigationId: string,
     dto: UpdateInvestigationDto,
   ) {
-    const access = await this.access.requireCapability(
-      principal,
-      investigationId,
-      'manage',
-    );
+    await this.access.requireCapability(principal, investigationId, 'manage');
 
     // Archived investigations are frozen except through archive/restore.
     const current = await this.prisma.investigation.findFirst({
@@ -272,11 +268,7 @@ export class InvestigationsService {
   // ---------------------------------------------------------------------
 
   async dashboard(principal: AuthenticatedPrincipal, investigationId: string) {
-    const access = await this.access.requireCapability(
-      principal,
-      investigationId,
-      'read',
-    );
+    await this.access.requireCapability(principal, investigationId, 'read');
 
     const [counts, recentActivity, nodes, edges] = await Promise.all([
       this.prisma.investigation.findFirst({
