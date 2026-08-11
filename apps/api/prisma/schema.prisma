@@ -357,6 +357,7 @@ model Entity {
   @@index([organizationId, type, status])
   @@index([investigationId])
   @@index([name])
+  @@index([latitude, longitude])
 }
 
 model Relationship {
@@ -475,6 +476,8 @@ model TimelineEvent {
   createdBy     User       @relation(fields: [createdById], references: [id])
 
   @@index([organizationId, investigationId, occurredAt])
+  @@index([organizationId, entityId, occurredAt])
+  @@index([organizationId, kind, occurredAt])
 }
 
 model ActivityEvent {

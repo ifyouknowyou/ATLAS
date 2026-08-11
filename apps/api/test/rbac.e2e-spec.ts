@@ -63,7 +63,7 @@ describe('RBAC enforcement (e2e)', () => {
     await request(app.getHttpServer())
       .patch(`/api/investigations/${created.body.id}`)
       .set('Authorization', `Bearer ${token}`)
-      .send({ status: 'IN_PROGRESS' })
+      .send({ status: 'ACTIVE' })
       .expect(200);
 
     const denied = await request(app.getHttpServer())

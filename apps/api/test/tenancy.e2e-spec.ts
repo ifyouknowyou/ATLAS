@@ -52,7 +52,7 @@ describe('Organization isolation (e2e)', () => {
     await request(app.getHttpServer())
       .patch(`/api/investigations/${created.body.id}`)
       .set('Authorization', `Bearer ${tokenB}`)
-      .send({ status: 'CLOSED' })
+      .send({ status: 'COMPLETED' })
       .expect(404);
   });
 

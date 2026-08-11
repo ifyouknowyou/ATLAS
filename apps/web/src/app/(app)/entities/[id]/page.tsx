@@ -1,5 +1,6 @@
 'use client';
 
+import { use } from 'react';
 import Link from 'next/link';
 import { ArrowLeft, Link2 } from 'lucide-react';
 import { useEntity, useEvidence } from '@/lib/queries';
@@ -8,8 +9,13 @@ import { Spinner } from '@/components/ui/Spinner';
 import { StatusBadge } from '@/components/ui/StatusBadge';
 import { confidenceLabel, formatWhen } from '@/lib/presentation';
 
-export default function EntityProfilePage({ params }: { params: { id: string } }) {
-  return <EntityProfile id={params.id} />;
+export default function EntityProfilePage({
+  params,
+}: {
+  params: Promise<{ id: string }>;
+}) {
+  const { id } = use(params);
+  return <EntityProfile id={id} />;
 }
 
 function EntityProfile({ id }: { id: string }) {

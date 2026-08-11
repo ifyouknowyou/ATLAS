@@ -14,6 +14,9 @@ module.exports = {
         },
       },
     ],
+    // d3-force + its deps are ESM-only; transpile just those packages so the
+    // graph engine runs under jest's CommonJS runtime.
+    '^.+\\.js$': ['babel-jest', { presets: ['@babel/preset-env'] }],
   },
   moduleNameMapper: {
     '^@/(.*)$': '<rootDir>/src/$1',
@@ -21,6 +24,10 @@ module.exports = {
   },
   setupFilesAfterEnv: ['<rootDir>/jest.setup.ts'],
   testMatch: ['**/*.test.ts', '**/*.test.tsx'],
-  transformIgnorePatterns: ['/node_modules/', '/.next/', '/out/'],
+  transformIgnorePatterns: [
+    '/node_modules/(?!d3-force|d3-quadtree|d3-dispatch|d3-timer|d3-random)',
+    '/.next/',
+    '/out/',
+  ],
   clearMocks: true,
 };

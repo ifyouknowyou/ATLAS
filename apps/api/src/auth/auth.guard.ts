@@ -6,15 +6,11 @@ import {
   UnauthorizedException,
 } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
-import { permissionsForRole } from '@atlas/shared';
 import { PrismaService } from '../prisma/prisma.service';
 import { APP_CONFIG, AppConfig } from '../config/app-config';
 import { isPublicTarget } from './public.decorator';
-import {
-  AuthenticatedPrincipal,
-  AuthenticatedRequest,
-  SessionPayload,
-} from './principal';
+import { AuthenticatedRequest, SessionPayload } from './principal';
+import { buildPrincipal } from './principal.builder';
 
 const BEARER_PREFIX = 'Bearer ';
 
@@ -64,26 +60,11 @@ export class AuthGuard implements CanActivate {
       throw new UnauthorizedException('Session is no longer active');
     }
 
-    const membership = await this.prisma.membership.findUnique({
-      where: {
-        userId_organizationId: {
-          userId: payload.sub,
-          organizationId: payload.oid,
-        },
-      },
-    });
-    if (!membership) {
-      throw new UnauthorizedException('No active organization membership');
-    }
-
-    const principal: AuthenticatedPrincipal = {
-      userId: membership.userId,
-      organizationId: membership.organizationId,
-      workspaceId: membership.activeWorkspaceId,
-      role: membership.role,
-      permissions: permissionsForRole(membership.role),
-    };
-    request.principal = principal;
+    request.principal = await buildPrincipal(
+      this.prisma,
+      payload.sub,
+      payload.oid,
+    );
     // Surface the decoded session so handlers (e.g. logout) can revoke it.
     request.sessionPayload = payload;
     return true;

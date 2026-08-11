@@ -373,3 +373,232 @@ export function useRemoveMember() {
   });
 }
 
+
+/**
+ * Phase 3 — Graph & Geospatial query hooks.
+ * All fetch through the centralized api-client; keys are invalidation targets
+ * for SSE-driven cache updates.
+ */
+
+export interface GraphNodeRow {
+  id: string;
+  name: string;
+  type: string;
+  confidence: number;
+  latitude?: number | null;
+  longitude?: number | null;
+  investigationId?: string | null;
+  tags?: string[];
+}
+
+export interface GraphEdgeRow {
+  id: string;
+  kind: string;
+  direction: string;
+  confidence: number;
+  sourceId: string;
+  targetId: string;
+  investigationId?: string | null;
+}
+
+export interface GraphPayload {
+  nodes: GraphNodeRow[];
+  edges: GraphEdgeRow[];
+  meta: { totalEntities: number; truncated?: boolean };
+}
+
+export interface NeighborhoodPayload {
+  center: GraphNodeRow;
+  nodes: GraphNodeRow[];
+  edges: GraphEdgeRow[];
+  depth: number;
+  truncated?: boolean;
+}
+
+export interface PathPayload {
+  nodes: GraphNodeRow[];
+  edges: GraphEdgeRow[];
+  found: boolean;
+  hops: number;
+}
+
+export interface TimelineRow {
+  id: string;
+  title: string;
+  description?: string | null;
+  kind: string;
+  occurredAt: string;
+  investigationId?: string | null;
+  entityId?: string | null;
+  createdByDisplayName?: string | null;
+}
+
+/** Org-wide (optionally investigation-scoped) graph browse. */
+export function useGraphBrowse(params?: {
+  investigationId?: string;
+  entityType?: string;
+  relationshipType?: string;
+  geoOnly?: boolean;
+  q?: string;
+  limit?: number;
+}) {
+  const token = useToken();
+  return useQuery({
+    queryKey: ['graph', params],
+    queryFn: () =>
+      api.get<GraphPayload>(
+        `/graph${qs({
+          ...(params?.investigationId ? { investigationId: params.investigationId } : {}),
+          ...(params?.entityType ? { entityType: params.entityType } : {}),
+          ...(params?.relationshipType ? { relationshipType: params.relationshipType } : {}),
+          ...(params?.geoOnly ? { geoOnly: 'true' } : {}),
+          ...(params?.q ? { q: params.q } : {}),
+          ...(params?.limit ? { limit: params.limit } : { limit: 300 }),
+        })}`,
+        token,
+      ),
+    enabled: Boolean(token),
+  });
+}
+
+/** Investigation-scoped graph for the workspace GRAPH tab. */
+export function useGraphForInvestigation(investigationId: string | undefined) {
+  const token = useToken();
+  return useQuery({
+    queryKey: ['graph', 'investigation', investigationId],
+    queryFn: () => api.get<GraphPayload>(`/graph?investigationId=${investigationId}`, token),
+    enabled: Boolean(token && investigationId),
+  });
+}
+
+/** Neighborhood expansion around an entity. */
+export function useNeighborhood(
+  centerId: string | undefined,
+  depth = 1,
+  investigationId?: string,
+) {
+  const token = useToken();
+  return useQuery({
+    queryKey: ['graph', 'neighborhood', centerId, depth, investigationId],
+    queryFn: () =>
+      api.get<NeighborhoodPayload>(
+        `/graph/neighborhood${qs({
+          centerId,
+          depth,
+          ...(investigationId ? { investigationId } : {}),
+        })}`,
+        token,
+      ),
+    enabled: Boolean(token && centerId),
+  });
+}
+
+/** Shortest path between two entities. */
+export function useGraphPath(
+  sourceId: string | undefined,
+  targetId: string | undefined,
+  enabled = false,
+) {
+  const token = useToken();
+  return useQuery({
+    queryKey: ['graph', 'path', sourceId, targetId],
+    queryFn: () =>
+      api.get<PathPayload>(
+        `/graph/path${qs({ sourceId, targetId, maxHops: 4 })}`,
+        token,
+      ),
+    enabled: Boolean(token && sourceId && targetId && enabled),
+  });
+}
+
+/** All geolocated entities (globe markers + map). */
+export function useLocations(params?: {
+  investigationId?: string;
+  entityType?: string;
+  limit?: number;
+}) {
+  const token = useToken();
+  return useQuery({
+    queryKey: ['geo', 'locations', params],
+    queryFn: () =>
+      api.get<GraphNodeRow[]>(
+        `/geo/locations${qs({
+          ...(params?.investigationId ? { investigationId: params.investigationId } : {}),
+          ...(params?.entityType ? { entityType: params.entityType } : {}),
+          ...(params?.limit ? { limit: params.limit } : { limit: 500 }),
+        })}`,
+        token,
+      ),
+    enabled: Boolean(token),
+  });
+}
+
+/** Entities inside a bounding box (map view). */
+export function useBoundingBox(params: {
+  minLat: number;
+  maxLat: number;
+  minLng: number;
+  maxLng: number;
+  investigationId?: string;
+  entityType?: string;
+}) {
+  const token = useToken();
+  return useQuery({
+    queryKey: ['geo', 'bbox', params],
+    queryFn: () =>
+      api.get<GraphNodeRow[]>(
+        `/geo/bounding-box${qs({
+          minLat: params.minLat,
+          maxLat: params.maxLat,
+          minLng: params.minLng,
+          maxLng: params.maxLng,
+          ...(params.investigationId ? { investigationId: params.investigationId } : {}),
+          ...(params.entityType ? { entityType: params.entityType } : {}),
+        })}`,
+        token,
+      ),
+    enabled: Boolean(token),
+  });
+}
+
+/** Connection arcs between geolocated entities (globe/map overlays). */
+export function useArcs(investigationId?: string) {
+  const token = useToken();
+  return useQuery({
+    queryKey: ['geo', 'arcs', investigationId],
+    queryFn: () =>
+      api.get<Array<{ source: { latitude: number; longitude: number }; target: { latitude: number; longitude: number }; kind: string; confidence: number }>>(
+        `/geo/arcs${qs(investigationId ? { investigationId } : {})}`,
+        token,
+      ),
+    enabled: Boolean(token),
+  });
+}
+
+/** Timeline events (org-wide, investigation- or entity-scoped). */
+export function useTimeline(params?: {
+  investigationId?: string;
+  entityId?: string;
+  kind?: string;
+  from?: string;
+  to?: string;
+  limit?: number;
+}) {
+  const token = useToken();
+  return useQuery({
+    queryKey: ['timeline', params],
+    queryFn: () =>
+      api.get<{ items: TimelineRow[]; total: number }>(
+        `/timeline${qs({
+          ...(params?.investigationId ? { investigationId: params.investigationId } : {}),
+          ...(params?.entityId ? { entityId: params.entityId } : {}),
+          ...(params?.kind ? { kind: params.kind } : {}),
+          ...(params?.from ? { from: params.from } : {}),
+          ...(params?.to ? { to: params.to } : {}),
+          ...(params?.limit ? { limit: params.limit } : { limit: 100 }),
+        })}`,
+        token,
+      ),
+    enabled: Boolean(token),
+  });
+}

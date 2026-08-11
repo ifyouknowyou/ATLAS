@@ -147,3 +147,137 @@ export type TaskStatus = (typeof TASK_STATUSES)[number];
 /** Clear marker that a record is part of the fictional demo dataset. */
 export const DEMO = 'DEMO' as const;
 export type DemoMarker = typeof DEMO;
+
+/**
+ * Phase 3 — Graph & Geospatial Intelligence contracts.
+ * Compile-time shapes shared between the API and the visual frontend.
+ * These are NOT Prisma enums — see enum-parity.spec.ts before adding enums.
+ */
+
+/** Layout algorithms the 2D graph engine can render. */
+export const GRAPH_LAYOUTS = ['force', 'radial', 'hierarchical', 'grid'] as const;
+export type GraphLayout = (typeof GRAPH_LAYOUTS)[number];
+
+/** Event categories shown on the timeline. Extensible without redesign. */
+export const TIMELINE_EVENT_KINDS = [
+  'ENTITY',
+  'RELATIONSHIP',
+  'EVIDENCE',
+  'NOTE',
+  'ACTIVITY',
+  'CUSTOM',
+] as const;
+export type TimelineEventKind = (typeof TIMELINE_EVENT_KINDS)[number];
+
+/** A geographic point (WGS84). */
+export interface GeoPoint {
+  latitude: number;
+  longitude: number;
+}
+
+/** A node in the wire graph payload (shaped like the dashboard graph nodes). */
+export interface GraphNodePayload {
+  id: string;
+  name: string;
+  type: EntityType;
+  confidence: number;
+  latitude?: number | null;
+  longitude?: number | null;
+  investigationId?: string | null;
+  tags?: string[];
+  properties?: Record<string, unknown> | null;
+}
+
+/** An edge in the wire graph payload. */
+export interface GraphEdgePayload {
+  id: string;
+  kind: RelationshipType;
+  direction: RelationshipDirection;
+  confidence: number;
+  sourceId: string;
+  targetId: string;
+  investigationId?: string | null;
+}
+
+/** Full graph payload served by the graph/geo endpoints. */
+export interface GraphPayload {
+  nodes: GraphNodePayload[];
+  edges: GraphEdgePayload[];
+  meta: {
+    totalEntities: number;
+    truncated?: boolean;
+  };
+}
+
+/** Incremental change applied to a client graph (never rebuild the whole graph). */
+export interface GraphDelta {
+  addedNodes?: GraphNodePayload[];
+  removedNodeIds?: string[];
+  updatedNodes?: GraphNodePayload[];
+  addedEdges?: GraphEdgePayload[];
+  removedEdgeIds?: string[];
+}
+
+/** Neighborhood payload (center + 1..depth hops). */
+export interface NeighborhoodPayload {
+  center: GraphNodePayload;
+  nodes: GraphNodePayload[];
+  edges: GraphEdgePayload[];
+  depth: number;
+  truncated?: boolean;
+}
+
+/** Shortest-path payload between two entities. */
+export interface PathPayload {
+  nodes: GraphNodePayload[];
+  edges: GraphEdgePayload[];
+  found: boolean;
+  hops: number;
+}
+
+/** A row in a timeline query result. */
+export interface TimelineEventItem {
+  id: string;
+  title: string;
+  description?: string | null;
+  kind: string;
+  occurredAt: string;
+  investigationId?: string | null;
+  entityId?: string | null;
+  createdById?: string | null;
+  createdByDisplayName?: string | null;
+}
+
+/** A single SSE message pushed to authorized clients. */
+export interface StreamMessage {
+  id: number;
+  type: 'graph' | 'timeline' | 'activity' | 'heartbeat';
+  investigationId?: string | null;
+  delta?: GraphDelta;
+  message?: string;
+  createdAt: string;
+}
+
+/** Payload of the short-lived realtime ticket. */
+export interface SseTicketPayload {
+  ticket: string;
+  expiresAt: string;
+}
+
+/** Result of a radius query. */
+export interface RadiusResult {
+  items: GeoPoint[];
+  meta: {
+    center: GeoPoint;
+    radiusKm: number;
+    count: number;
+  };
+}
+
+/** Connection arcs between geographically-anchored entities. */
+export interface GeoArc {
+  source: GeoPoint;
+  target: GeoPoint;
+  kind: RelationshipType;
+  confidence: number;
+}

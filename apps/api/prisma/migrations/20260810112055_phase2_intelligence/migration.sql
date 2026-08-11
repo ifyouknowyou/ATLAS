@@ -25,14 +25,21 @@ CREATE TYPE "InvestigationMemberRole" AS ENUM ('LEAD', 'ANALYST', 'CONTRIBUTOR',
 -- CreateEnum
 CREATE TYPE "TaskStatus" AS ENUM ('TODO', 'IN_PROGRESS', 'BLOCKED', 'DONE');
 
--- AlterEnum (map legacy Phase 1 statuses to Phase 2 values before the type swap)
+-- AlterEnum (map legacy Phase 1 statuses to Phase 2 values during the type swap.
+-- The UPDATE-before-swap form is invalid because the old enum cannot hold the
+-- new literals; value remapping belongs in the USING clause instead.)
 BEGIN;
 CREATE TYPE "InvestigationStatus_new" AS ENUM ('DRAFT', 'ACTIVE', 'PAUSED', 'COMPLETED', 'ARCHIVED');
-UPDATE "Investigation" SET "status" = 'DRAFT' WHERE "status" = 'OPEN';
-UPDATE "Investigation" SET "status" = 'ACTIVE' WHERE "status" IN ('IN_PROGRESS', 'PENDING_REVIEW');
-UPDATE "Investigation" SET "status" = 'COMPLETED' WHERE "status" = 'CLOSED';
 ALTER TABLE "public"."Investigation" ALTER COLUMN "status" DROP DEFAULT;
-ALTER TABLE "Investigation" ALTER COLUMN "status" TYPE "InvestigationStatus_new" USING ("status"::text::"InvestigationStatus_new");
+ALTER TABLE "Investigation" ALTER COLUMN "status" TYPE "InvestigationStatus_new" USING (
+  CASE "status"::text
+    WHEN 'OPEN' THEN 'DRAFT'::"InvestigationStatus_new"
+    WHEN 'IN_PROGRESS' THEN 'ACTIVE'::"InvestigationStatus_new"
+    WHEN 'PENDING_REVIEW' THEN 'ACTIVE'::"InvestigationStatus_new"
+    WHEN 'CLOSED' THEN 'COMPLETED'::"InvestigationStatus_new"
+    ELSE 'ARCHIVED'::"InvestigationStatus_new"
+  END
+);
 ALTER TYPE "InvestigationStatus" RENAME TO "InvestigationStatus_old";
 ALTER TYPE "InvestigationStatus_new" RENAME TO "InvestigationStatus";
 DROP TYPE "public"."InvestigationStatus_old";

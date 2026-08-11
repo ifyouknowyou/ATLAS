@@ -1103,6 +1103,8 @@ Fix confirmed vulnerabilities.
 
 Verify:
 
+
+
 ```text
 Can a Viewer modify graph data?
 Can an archived investigation appear as active?

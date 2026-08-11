@@ -1,13 +1,6 @@
-import { Activity } from 'lucide-react';
-import { PlaceholderPage } from '@/components/ui/PlaceholderPage';
+import { TimelineWorkspace } from '@/features/timeline/TimelineWorkspace';
 
+/** /timeline — Chronological intelligence view (Phase 3 §25-28). */
 export default function TimelinePage() {
-  return (
-    <PlaceholderPage
-      title="TIMELINE"
-      icon={<Activity className="h-5 w-5" />}
-      phase="PHASE 3 · TEMPORAL ANALYSIS"
-      description="Timeline reconstruction from TimelineEvent records arrives in Phase 3."
-    />
-  );
+  return <TimelineWorkspace />;
 }

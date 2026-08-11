@@ -17,6 +17,10 @@ import { RelationshipsModule } from './relationships/relationships.module';
 import { EvidenceModule } from './evidence/evidence.module';
 import { NotesModule } from './notes/notes.module';
 import { SearchModule } from './search/search.module';
+import { GraphModule } from './graph/graph.module';
+import { GeoModule } from './geo/geo.module';
+import { TimelineModule } from './timeline/timeline.module';
+import { RealtimeModule } from './realtime/realtime.module';
 import { ActivityModule } from './common/activity.service';
 
 @Module({
@@ -36,6 +40,10 @@ import { ActivityModule } from './common/activity.service';
     EvidenceModule,
     NotesModule,
     SearchModule,
+    GraphModule,
+    GeoModule,
+    TimelineModule,
+    RealtimeModule,
   ],
   providers: [
     // Authentication first, then permission evaluation, for every request.
