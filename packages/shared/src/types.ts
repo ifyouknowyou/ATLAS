@@ -281,3 +281,53 @@ export interface GeoArc {
   kind: RelationshipType;
   confidence: number;
 }
+
+// ---------------------------------------------------------------------------
+// Phase 4 — AI Intelligence Engine
+// ---------------------------------------------------------------------------
+
+/** Conversation turn roles persisted for AI assistant history. */
+export type AiRole = 'USER' | 'ASSISTANT';
+
+/** A source the AI assistant grounded an answer on. */
+export interface AiSourceRef {
+  kind: 'ENTITY' | 'EVIDENCE' | 'NOTE';
+  id: string;
+  title: string;
+  snippet?: string;
+  investigationId?: string | null;
+}
+
+/** Request body for the assistant chat endpoint. */
+export interface AiChatRequest {
+  /** Scope to an investigation (membership enforced server-side). */
+  investigationId?: string;
+  message: string;
+  /** Prior turns for conversation continuity. */
+  history?: Array<{ role: AiRole; content: string }>;
+}
+
+/** Response from the assistant chat endpoint. */
+export interface AiChatReply {
+  reply: string;
+  sources: AiSourceRef[];
+  messageId: string;
+}
+
+/** Structured investigation summary (knowledge-graph reasoning). */
+export interface AiSummaryPayload {
+  overview: string;
+  keyEntities: string[];
+  keyRelationships: string[];
+  evidenceHighlights: string[];
+  openQuestions: string[];
+}
+
+/** Persisted AI conversation message. */
+export interface AiMessageRow {
+  id: string;
+  role: AiRole;
+  content: string;
+  sources: AiSourceRef[] | null;
+  createdAt: string;
+}

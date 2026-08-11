@@ -1,13 +1,6 @@
-import { Bot } from 'lucide-react';
-import { PlaceholderPage } from '@/components/ui/PlaceholderPage';
+import { AssistantWorkspace } from '@/features/assistant/AssistantWorkspace';
 
+/** /assistant — AI Intelligence Engine (Phase 4). */
 export default function AssistantPage() {
-  return (
-    <PlaceholderPage
-      title="AI ASSISTANT"
-      icon={<Bot className="h-5 w-5" />}
-      phase="PHASE 4 · AI INTELLIGENCE ENGINE"
-      description="Contextual research assistance over investigations, entities and evidence arrives in Phase 4."
-    />
-  );
+  return <AssistantWorkspace />;
 }

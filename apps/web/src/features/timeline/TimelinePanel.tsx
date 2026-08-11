@@ -10,10 +10,12 @@ import { formatWhen } from '@/lib/presentation';
 interface TimelinePanelProps {
   investigationId?: string;
   onSelectEvent?: (eventId: string | null) => void;
+  /** Event id currently selected in the viewport — rendered with emphasis. */
+  selectedEventId?: string | null;
 }
 
 /** Timeline filters + event detail list (§26/§27). */
-export function TimelinePanel({ investigationId, onSelectEvent }: TimelinePanelProps) {
+export function TimelinePanel({ investigationId, onSelectEvent, selectedEventId }: TimelinePanelProps) {
   const [activeKinds, setActiveKinds] = useState<Set<string>>(new Set());
   const { data, isLoading } = useTimeline({ investigationId, limit: 200 });
   const items = data?.items ?? [];
@@ -59,7 +61,11 @@ export function TimelinePanel({ investigationId, onSelectEvent }: TimelinePanelP
           <button
             key={e.id}
             onClick={() => onSelectEvent?.(e.id)}
-            className="flex w-full items-start gap-2 rounded border border-void-line/60 px-2 py-1.5 text-left hover:border-phosphor-faint/40"
+            className={`flex w-full items-start gap-2 rounded border px-2 py-1.5 text-left hover:border-phosphor-faint/40 ${
+              e.id === selectedEventId
+                ? 'border-phosphor-faint bg-phosphor-faint/10'
+                : 'border-void-line/60'
+            }`}
           >
             <span className="mt-1 h-2 w-2 shrink-0 rounded-full" style={{ background: kindColor(e.kind) }} />
             <span className="min-w-0 flex-1">

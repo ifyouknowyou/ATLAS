@@ -8,6 +8,8 @@ interface TimelineViewportProps {
   investigationId?: string;
   entityId?: string;
   onSelectEvent?: (eventId: string | null) => void;
+  /** Event id currently selected in the list — rendered with emphasis. */
+  selectedEventId?: string | null;
 }
 
 const WIDTH = 960;
@@ -19,7 +21,7 @@ const PAD = 40;
  * Horizontal chronological timeline: density histogram + per-kind lanes.
  * SVG for accessibility and testability (§25-27).
  */
-export function TimelineViewport({ investigationId, entityId, onSelectEvent }: TimelineViewportProps) {
+export function TimelineViewport({ investigationId, entityId, onSelectEvent, selectedEventId }: TimelineViewportProps) {
   const { data, isLoading, isError } = useTimeline({ investigationId, entityId, limit: 200 });
   const items = data?.items ?? [];
 
@@ -85,15 +87,16 @@ export function TimelineViewport({ investigationId, entityId, onSelectEvent }: T
             </text>
             {layout.byKind.get(kind)!.map((e) => {
               const x = xForTime(new Date(e.occurredAt).getTime(), layout.bounds, WIDTH);
+              const selected = e.id === selectedEventId;
               return (
                 <circle
                   key={e.id}
                   cx={x}
                   cy={y}
-                  r={4}
-                  fill={kindColor(e.kind)}
-                  stroke="#04070c"
-                  strokeWidth={1}
+                  r={selected ? 6 : 4}
+                  fill={selected ? '#e8b64c' : kindColor(e.kind)}
+                  stroke={selected ? '#f4f8ff' : '#04070c'}
+                  strokeWidth={selected ? 1.5 : 1}
                   onClick={() => onSelectEvent?.(e.id)}
                   className="cursor-pointer"
                 >

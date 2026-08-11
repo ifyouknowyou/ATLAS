@@ -23,7 +23,9 @@ export type ActivityType =
   | 'TASK_COMPLETED'
   | 'MEMBER_ADDED'
   | 'MEMBER_REMOVED'
-  | 'MEMBER_ROLE_CHANGED';
+  | 'MEMBER_ROLE_CHANGED'
+  | 'AI_CHAT_CREATED'
+  | 'AI_SUMMARY_CREATED';
 
 export interface ActivityInput {
   type: ActivityType;

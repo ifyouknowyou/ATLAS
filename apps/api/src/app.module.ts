@@ -21,6 +21,7 @@ import { GraphModule } from './graph/graph.module';
 import { GeoModule } from './geo/geo.module';
 import { TimelineModule } from './timeline/timeline.module';
 import { RealtimeModule } from './realtime/realtime.module';
+import { AiModule } from './ai/ai.module';
 import { ActivityModule } from './common/activity.service';
 
 @Module({
@@ -44,6 +45,7 @@ import { ActivityModule } from './common/activity.service';
     GeoModule,
     TimelineModule,
     RealtimeModule,
+    AiModule,
   ],
   providers: [
     // Authentication first, then permission evaluation, for every request.

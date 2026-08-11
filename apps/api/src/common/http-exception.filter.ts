@@ -68,6 +68,7 @@ export class AllExceptionsFilter implements ExceptionFilter {
       [HttpStatus.NOT_FOUND]: 'NOT_FOUND',
       [HttpStatus.CONFLICT]: 'CONFLICT',
       [HttpStatus.TOO_MANY_REQUESTS]: 'RATE_LIMITED',
+      [HttpStatus.SERVICE_UNAVAILABLE]: 'SERVICE_UNAVAILABLE',
     };
     return map[status] ?? API_ERROR_CODES.INTERNAL;
   }

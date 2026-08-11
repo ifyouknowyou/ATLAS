@@ -16,6 +16,7 @@ const config: AppConfig = {
   authBcryptRounds: 4,
   demoOwnerEmail: 'admin@atlas.demo',
   demoOwnerPassword: 'x',
+  anthropicModel: 'claude-opus-5',
 };
 
 type PrismaOverrides = {

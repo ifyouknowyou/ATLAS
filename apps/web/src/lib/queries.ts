@@ -602,3 +602,84 @@ export function useTimeline(params?: {
     enabled: Boolean(token),
   });
 }
+
+// ---------------------------------------------------------------------------
+// AI assistant (Phase 4)
+// ---------------------------------------------------------------------------
+
+export interface AiSourceRef {
+  kind: 'ENTITY' | 'EVIDENCE' | 'NOTE';
+  id: string;
+  title: string;
+  snippet?: string;
+  investigationId?: string | null;
+}
+
+export interface AiMessageRow {
+  id: string;
+  role: 'USER' | 'ASSISTANT';
+  content: string;
+  sources: AiSourceRef[] | null;
+  createdAt: string;
+}
+
+export interface AiChatReply {
+  reply: string;
+  sources: AiSourceRef[];
+  messageId: string;
+}
+
+export interface AiSummaryPayload {
+  overview: string;
+  keyEntities: string[];
+  keyRelationships: string[];
+  evidenceHighlights: string[];
+  openQuestions: string[];
+}
+
+/** Assistant chat — returns the reply plus grounded sources. */
+export function useAiChat(investigationId?: string) {
+  const token = useToken();
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (vars: {
+      message: string;
+      history?: Array<{ role: 'USER' | 'ASSISTANT'; content: string }>;
+    }) =>
+      api.post<AiChatReply>(
+        `/ai/chat`,
+        { investigationId, message: vars.message, history: vars.history },
+        token,
+      ),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: ['ai-messages'] });
+    },
+  });
+}
+
+/** Structured investigation summary. */
+export function useAiSummarize() {
+  const token = useToken();
+  return useMutation({
+    mutationFn: (vars: { investigationId?: string }) =>
+      api.post<{ summary: AiSummaryPayload; sources: AiSourceRef[] }>(
+        `/ai/summarize`,
+        { investigationId: vars.investigationId },
+        token,
+      ),
+  });
+}
+
+/** Persisted assistant conversation history. */
+export function useAiMessages(investigationId?: string) {
+  const token = useToken();
+  return useQuery({
+    queryKey: ['ai-messages', investigationId],
+    queryFn: () =>
+      api.get<AiMessageRow[]>(
+        `/ai/messages${qs(investigationId ? { investigationId } : {})}`,
+        token,
+      ),
+    enabled: Boolean(token),
+  });
+}

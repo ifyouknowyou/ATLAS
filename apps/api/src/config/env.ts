@@ -13,6 +13,10 @@ export interface AppConfig {
   authBcryptRounds: number;
   demoOwnerEmail: string;
   demoOwnerPassword: string;
+  /** Server-side Anthropic API key. Optional — AI endpoints report 503 when absent. */
+  anthropicApiKey?: string;
+  /** Claude model to use for the assistant (default claude-opus-5). */
+  anthropicModel: string;
 }
 
 export type RawEnv = Record<string, unknown> & NodeJS.ProcessEnv;
@@ -65,6 +69,12 @@ export function validateEnv(env: RawEnv): AppConfig {
     demoOwnerPassword: isNonEmptyString(env.DEMO_OWNER_PASSWORD)
       ? env.DEMO_OWNER_PASSWORD
       : 'AtlasDemo#2026',
+    anthropicApiKey: isNonEmptyString(env.ANTHROPIC_API_KEY)
+      ? env.ANTHROPIC_API_KEY
+      : undefined,
+    anthropicModel: isNonEmptyString(env.ANTHROPIC_MODEL)
+      ? env.ANTHROPIC_MODEL
+      : 'claude-opus-5',
   };
   return snapshot;
 }
