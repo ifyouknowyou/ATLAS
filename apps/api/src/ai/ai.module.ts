@@ -32,5 +32,6 @@ import {
           : new DisabledClaudeProvider(),
     },
   ],
+  exports: [AiService, RetrievalService, CLAUDE_PROVIDER],
 })
 export class AiModule {}

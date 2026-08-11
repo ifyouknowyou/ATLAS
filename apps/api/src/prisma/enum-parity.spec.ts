@@ -17,12 +17,26 @@ import {
   RelationshipType,
   Role,
   TaskStatus,
+  BackgroundJobStatus,
+  CommentTargetType,
+  EvidenceAnnotationType,
+  EvidenceLinkTargetType,
+  EvidenceProcessingStatus,
+  ReportBlockType,
+  ReportReviewDecision,
+  ReportStatus,
+  ReportTemplateKind,
 } from '@prisma/client';
 import {
+  BACKGROUND_JOB_STATUSES,
   CLASSIFICATIONS,
   Classification as SharedClassification,
+  COMMENT_TARGET_TYPES,
   ENTITY_STATUSES,
   ENTITY_TYPES,
+  EVIDENCE_ANNOTATION_TYPES,
+  EVIDENCE_LINK_TARGET_TYPES,
+  EVIDENCE_PROCESSING_STATUSES,
   EVIDENCE_STATUSES,
   EVIDENCE_TYPES,
   INVESTIGATION_MEMBER_ROLES,
@@ -31,6 +45,10 @@ import {
   NOTE_VISIBILITIES,
   RELATIONSHIP_DIRECTIONS,
   RELATIONSHIP_TYPES,
+  REPORT_BLOCK_TYPES,
+  REPORT_REVIEW_DECISIONS,
+  REPORT_STATUSES,
+  REPORT_TEMPLATE_KINDS,
   ROLES,
   TASK_STATUSES,
 } from '@atlas/shared';
@@ -106,5 +124,57 @@ describe('Prisma enum parity with @atlas/shared', () => {
 
   it('TaskStatus matches shared TASK_STATUSES', () => {
     expect(asSet(enumValues(TaskStatus))).toEqual(asSet(TASK_STATUSES));
+  });
+
+  it('ReportStatus matches shared REPORT_STATUSES', () => {
+    expect(asSet(enumValues(ReportStatus))).toEqual(asSet(REPORT_STATUSES));
+  });
+
+  it('EvidenceProcessingStatus matches shared EVIDENCE_PROCESSING_STATUSES', () => {
+    expect(asSet(enumValues(EvidenceProcessingStatus))).toEqual(
+      asSet(EVIDENCE_PROCESSING_STATUSES),
+    );
+  });
+
+  it('BackgroundJobStatus matches shared BACKGROUND_JOB_STATUSES', () => {
+    expect(asSet(enumValues(BackgroundJobStatus))).toEqual(
+      asSet(BACKGROUND_JOB_STATUSES),
+    );
+  });
+
+  it('EvidenceAnnotationType matches shared EVIDENCE_ANNOTATION_TYPES', () => {
+    expect(asSet(enumValues(EvidenceAnnotationType))).toEqual(
+      asSet(EVIDENCE_ANNOTATION_TYPES),
+    );
+  });
+
+  it('CommentTargetType matches shared COMMENT_TARGET_TYPES', () => {
+    expect(asSet(enumValues(CommentTargetType))).toEqual(
+      asSet(COMMENT_TARGET_TYPES),
+    );
+  });
+
+  it('EvidenceLinkTargetType matches shared EVIDENCE_LINK_TARGET_TYPES', () => {
+    expect(asSet(enumValues(EvidenceLinkTargetType))).toEqual(
+      asSet(EVIDENCE_LINK_TARGET_TYPES),
+    );
+  });
+
+  it('ReportBlockType matches shared REPORT_BLOCK_TYPES', () => {
+    expect(asSet(enumValues(ReportBlockType))).toEqual(
+      asSet(REPORT_BLOCK_TYPES),
+    );
+  });
+
+  it('ReportTemplateKind matches shared REPORT_TEMPLATE_KINDS', () => {
+    expect(asSet(enumValues(ReportTemplateKind))).toEqual(
+      asSet(REPORT_TEMPLATE_KINDS),
+    );
+  });
+
+  it('ReportReviewDecision matches shared REPORT_REVIEW_DECISIONS', () => {
+    expect(asSet(enumValues(ReportReviewDecision))).toEqual(
+      asSet(REPORT_REVIEW_DECISIONS),
+    );
   });
 });

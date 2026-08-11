@@ -130,7 +130,91 @@ enum TaskStatus {
 
 enum ReportStatus {
   DRAFT
+  IN_REVIEW
+  CHANGES_REQUESTED
+  APPROVED
   PUBLISHED
+  ARCHIVED
+}
+
+// ---------------------------------------------------------------------------
+// Phase 5 — Evidence intelligence, reports & collaboration enums
+// ---------------------------------------------------------------------------
+
+enum EvidenceProcessingStatus {
+  QUEUED
+  PROCESSING
+  COMPLETED
+  PARTIAL
+  FAILED
+}
+
+enum BackgroundJobStatus {
+  QUEUED
+  PROCESSING
+  COMPLETED
+  FAILED
+  CANCELLED
+}
+
+enum EvidenceAnnotationType {
+  HIGHLIGHT
+  COMMENT
+  TAG
+  REGION
+  BOOKMARK
+}
+
+enum CommentTargetType {
+  INVESTIGATION
+  ENTITY
+  EVIDENCE
+  TIMELINE_EVENT
+  REPORT
+  REPORT_BLOCK
+  NOTE
+  RELATIONSHIP
+}
+
+enum EvidenceLinkTargetType {
+  INVESTIGATION
+  ENTITY
+  RELATIONSHIP
+  TIMELINE_EVENT
+  NOTE
+  REPORT
+}
+
+enum ReportBlockType {
+  TEXT
+  HEADING
+  IMAGE
+  TABLE
+  ENTITY
+  RELATIONSHIP
+  EVIDENCE
+  TIMELINE
+  MAP
+  GRAPH
+  AI_SUMMARY
+  CITATION_LIST
+  CALLOUT
+  PAGE_BREAK
+}
+
+enum ReportTemplateKind {
+  INVESTIGATION_REPORT
+  EXECUTIVE_INTELLIGENCE_BRIEF
+  EVIDENCE_SUMMARY
+  ENTITY_PROFILE
+  INCIDENT_ANALYSIS
+  RESEARCH_SUMMARY
+}
+
+enum ReportReviewDecision {
+  APPROVE
+  REJECT
+  REQUEST_CHANGES
 }
 
 // ---------------------------------------------------------------------------
@@ -167,6 +251,26 @@ model User {
   createdTasks                 Task[]         @relation("task_creator")
   aiMessages                   AiMessage[]
 
+  createdEvidenceVersions      EvidenceVersion[]
+  evidenceAccessEvents         EvidenceAccessEvent[] @relation("evidence_access_actor")
+  evidenceAnnotations          EvidenceAnnotation[] @relation("evidence_annotation_author")
+  evidenceProcessingJobs       EvidenceProcessingJob[]
+  evidenceLinks                EvidenceLink[]
+  createdBackgroundJobs        BackgroundJob[]
+  createdReportTemplates       ReportTemplate[]
+  createdReportVersions        ReportVersion[]
+  createdReportCitations       ReportCitation[]
+  reportReviews                ReportReview[]       @relation("report_reviewer")
+  reportApprovals              ReportApproval[]     @relation("report_approver")
+  createdComments              Comment[]
+  createdCommentReplies        CommentReply[]
+  commentMentions              Mention[]            @relation("mention_user")
+  mentionsMade                 Mention[]            @relation("mention_mentionedBy")
+  notifications                Notification[]       @relation("notification_user")
+  notificationsSent            Notification[]       @relation("notification_actor")
+  presenceSessions             PresenceSession[]
+  collaborationEvents          CollaborationEvent[] @relation("collab_actor")
+
   @@index([email])
 }
 
@@ -193,6 +297,22 @@ model Organization {
   events        ActivityEvent[]
   aiMessages    AiMessage[]
 
+  evidenceVersions        EvidenceVersion[]
+  evidenceAccessEvents    EvidenceAccessEvent[]
+  evidenceAnnotations     EvidenceAnnotation[]
+  evidenceProcessingJobs  EvidenceProcessingJob[]
+  evidenceLinks           EvidenceLink[]
+  backgroundJobs          BackgroundJob[]
+  reportTemplates         ReportTemplate[]
+  reportVersions          ReportVersion[]
+  reportCitations         ReportCitation[]
+  comments                Comment[]
+  commentReplies          CommentReply[]
+  mentions                Mention[]
+  notifications           Notification[]
+  presenceSessions        PresenceSession[]
+  collaborationEvents     CollaborationEvent[]
+
   @@index([slug])
 }
 
@@ -211,6 +331,7 @@ model Workspace {
   investigations Investigation[]
   entities      Entity[]
   events        ActivityEvent[]
+  reports       Report[]
 
   @@unique([organizationId, name])
   @@index([organizationId])
@@ -282,6 +403,11 @@ model Investigation {
   tasks          Task[]
   activity       ActivityEvent[]
   aiMessages     AiMessage[]
+  comments       Comment[]
+  mentions       Mention[]
+  notifications  Notification[]
+  collaborationEvents CollaborationEvent[]
+  backgroundJobs BackgroundJob[]
 
   @@index([organizationId, workspaceId])
   @@index([status, archivedAt])
@@ -390,31 +516,45 @@ model Relationship {
 }
 
 model Evidence {
-  id               String         @id @default(uuid())
+  id               String                   @id @default(uuid())
   name             String
-  kind             EvidenceType   @default(OTHER)
+  kind             EvidenceType             @default(OTHER)
   title            String?
   description      String?
   source           String?
-  classification   Classification @default(INTERNAL)
+  classification   Classification           @default(INTERNAL)
   hash             String?
   mimeType         String?
   size             Int?
-  status           EvidenceStatus @default(PENDING)
+  status           EvidenceStatus           @default(PENDING)
   reference        String?
   content          String?
   collectedAt      DateTime?
   organizationId   String
   investigationId  String?
   createdById      String
-  createdAt        DateTime       @default(now())
-  updatedAt        DateTime       @updatedAt
+  createdAt        DateTime                 @default(now())
+  updatedAt        DateTime                 @updatedAt
+
+  // Phase 5 — file vault additions
+  storageKey          String?                 @unique
+  originalFilename    String?
+  processingStatus    EvidenceProcessingStatus?
+  verifiedAt          DateTime?
 
   organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
   investigation Investigation? @relation(fields: [investigationId], references: [id])
   createdBy     User        @relation(fields: [createdById], references: [id])
 
+  versions          EvidenceVersion[]
+  accessEvents      EvidenceAccessEvent[]
+  annotations       EvidenceAnnotation[]
+  processingJobs    EvidenceProcessingJob[]
+  links             EvidenceLink[]
+
   @@index([organizationId, kind, status])
+  @@index([organizationId, classification, status])
+  @@index([organizationId, title])
   @@index([investigationId])
   @@index([createdById])
 }
@@ -444,20 +584,37 @@ model Note {
 model Report {
   id               String       @id @default(uuid())
   title            String
+  description      String?
   status           ReportStatus @default(DRAFT)
   summary          String?
+  classification   Classification @default(INTERNAL)
   organizationId   String
+  workspaceId      String?
   investigationId  String?
+  templateId       String?
+  templateKind     ReportTemplateKind?
+  aiGenerated      Boolean      @default(false)
+  aiStatus         String?      // REVIEW_REQUIRED | VERIFIED | null
+  currentVersion   Int          @default(0)
   createdById      String
   createdAt        DateTime     @default(now())
   publishedAt      DateTime?
   updatedAt        DateTime     @updatedAt
 
   organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  workspace    Workspace?  @relation(fields: [workspaceId], references: [id])
   investigation Investigation? @relation(fields: [investigationId], references: [id])
+  template     ReportTemplate? @relation(fields: [templateId], references: [id])
   createdBy     User        @relation(fields: [createdById], references: [id])
 
+  versions   ReportVersion[]
+  sections   ReportSection[]
+  citations  ReportCitation[]
+  reviews    ReportReview[]
+  approvals  ReportApproval[]
+
   @@index([organizationId, investigationId])
+  @@index([organizationId, status, createdAt])
 }
 
 model TimelineEvent {
@@ -520,4 +677,430 @@ model AiMessage {
   @@index([organizationId, investigationId, createdAt])
   @@index([userId, createdAt])
   @@index([investigationId])
+}
+
+// ---------------------------------------------------------------------------
+// Phase 5 — Evidence Vault
+// ---------------------------------------------------------------------------
+
+model EvidenceVersion {
+  id               String   @id @default(uuid())
+  evidenceId       String
+  versionNumber    Int
+  storageKey       String
+  hash             String   @db.VarChar(64)
+  size             Int?
+  mimeType         String?
+  originalFilename String?
+  changeType       String   // UPLOAD | METADATA_EDIT | CLASSIFICATION_CHANGE | RESTORE | REUPLOAD
+  changeSummary    String?
+  organizationId   String
+  createdById      String
+  createdAt        DateTime @default(now())
+
+  evidence   Evidence @relation(fields: [evidenceId], references: [id], onDelete: Cascade)
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  createdBy  User     @relation(fields: [createdById], references: [id])
+  accessEvents EvidenceAccessEvent[]
+  annotations  EvidenceAnnotation[]
+
+  @@unique([evidenceId, versionNumber])
+  @@index([evidenceId])
+  @@index([organizationId])
+}
+
+model EvidenceAccessEvent {
+  id             String   @id @default(uuid())
+  evidenceId     String
+  versionId      String?
+  action         String   // UPLOADED | DOWNLOADED | PREVIEWED | ANNOTATED | CLASSIFICATION_CHANGED | METADATA_EDITED | ARCHIVED | RESTORED | DELETED | PROCESSED
+  actorType      String   // USER | SYSTEM
+  actorId        String?
+  organizationId String
+  safeMetadata   Json?
+  createdAt      DateTime @default(now())
+
+  evidence   Evidence @relation(fields: [evidenceId], references: [id], onDelete: Cascade)
+  version    EvidenceVersion? @relation(fields: [versionId], references: [id], onDelete: SetNull)
+  actor      User?     @relation("evidence_access_actor", fields: [actorId], references: [id], onDelete: SetNull)
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  @@index([evidenceId, createdAt])
+  @@index([actorId, createdAt])
+  @@index([organizationId])
+}
+
+model EvidenceAnnotation {
+  id           String                 @id @default(uuid())
+  evidenceId   String
+  versionId    String?
+  type         EvidenceAnnotationType
+  authorId     String
+  organizationId String
+  target       Json?
+  content      String?
+  tags         String[]               @default([])
+  resolvedAt   DateTime?
+  createdAt    DateTime               @default(now())
+  updatedAt    DateTime               @updatedAt
+
+  evidence   Evidence @relation(fields: [evidenceId], references: [id], onDelete: Cascade)
+  version    EvidenceVersion? @relation(fields: [versionId], references: [id], onDelete: SetNull)
+  author     User     @relation("evidence_annotation_author", fields: [authorId], references: [id])
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  @@index([evidenceId, createdAt])
+  @@index([authorId])
+  @@index([organizationId])
+}
+
+model EvidenceProcessingJob {
+  id               String                   @id @default(uuid())
+  evidenceId       String
+  kind             String                   // TEXT_EXTRACTION | METADATA_EXTRACTION | OCR | DOCUMENT_PARSING | EMBEDDING
+  status           EvidenceProcessingStatus @default(QUEUED)
+  attempts         Int                      @default(0)
+  maxAttempts      Int                      @default(3)
+  errorCode        String?
+  errorMessage     String?
+  payload          Json?
+  result           Json?
+  organizationId   String
+  createdById      String?
+  startedAt        DateTime?
+  completedAt      DateTime?
+  createdAt        DateTime                 @default(now())
+  updatedAt        DateTime                 @updatedAt
+
+  evidence   Evidence @relation(fields: [evidenceId], references: [id], onDelete: Cascade)
+  createdBy  User?    @relation(fields: [createdById], references: [id])
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  @@unique([evidenceId, kind])
+  @@index([status, updatedAt])
+  @@index([organizationId])
+}
+
+model EvidenceLink {
+  id               String               @id @default(uuid())
+  evidenceId       String
+  targetType       EvidenceLinkTargetType
+  targetId         String
+  linkType         String               @default("REFERS_TO")
+  organizationId   String
+  createdById      String
+  createdAt        DateTime             @default(now())
+
+  evidence   Evidence @relation(fields: [evidenceId], references: [id], onDelete: Cascade)
+  createdBy  User     @relation(fields: [createdById], references: [id])
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  @@unique([evidenceId, targetType, targetId])
+  @@index([targetType, targetId])
+  @@index([organizationId])
+}
+
+// ---------------------------------------------------------------------------
+// Phase 5 — Background processing
+// ---------------------------------------------------------------------------
+
+model BackgroundJob {
+  id               String              @id @default(uuid())
+  kind             String
+  status           BackgroundJobStatus @default(QUEUED)
+  payload          Json?
+  result           Json?
+  dedupeKey        String?
+  attempts         Int                 @default(0)
+  maxAttempts      Int                 @default(3)
+  errorCode        String?
+  errorMessage     String?
+  lockToken        String?
+  organizationId   String
+  investigationId  String?
+  createdById      String?
+  scheduledAt      DateTime            @default(now())
+  startedAt        DateTime?
+  completedAt      DateTime?
+  createdAt        DateTime            @default(now())
+  updatedAt        DateTime            @updatedAt
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  investigation Investigation? @relation(fields: [investigationId], references: [id], onDelete: SetNull)
+  createdBy     User?       @relation(fields: [createdById], references: [id])
+
+  @@unique([kind, dedupeKey])
+  @@index([status, scheduledAt])
+  @@index([organizationId])
+}
+
+// ---------------------------------------------------------------------------
+// Phase 5 — Reports
+// ---------------------------------------------------------------------------
+
+model ReportTemplate {
+  id             String             @id @default(uuid())
+  name           String
+  kind           ReportTemplateKind
+  description    String?
+  sections       Json               // [{ key, title, isRequired, defaultBlocks }]
+  isSystem       Boolean            @default(false)
+  organizationId String
+  createdById    String?
+  createdAt      DateTime           @default(now())
+  updatedAt      DateTime           @updatedAt
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  createdBy     User?       @relation(fields: [createdById], references: [id])
+
+  reports Report[]
+
+  @@index([organizationId, kind])
+}
+
+model ReportVersion {
+  id             String   @id @default(uuid())
+  reportId       String
+  versionNumber  Int
+  title          String?
+  summary        String?
+  sections       Json?
+  changeSummary  String?
+  organizationId String
+  createdById    String
+  publishedAt    DateTime?
+  createdAt      DateTime @default(now())
+
+  report       Report @relation(fields: [reportId], references: [id], onDelete: Cascade)
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  createdBy    User   @relation(fields: [createdById], references: [id])
+
+  @@unique([reportId, versionNumber])
+  @@index([reportId])
+  @@index([organizationId])
+}
+
+model ReportSection {
+  id             String   @id @default(uuid())
+  reportId       String
+  key            String
+  title          String
+  position       Int
+  isRequired     Boolean  @default(false)
+  aiGenerated    Boolean  @default(false)
+  collapsed      Boolean  @default(false)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  report Report @relation(fields: [reportId], references: [id], onDelete: Cascade)
+  blocks ReportBlock[]
+  citations ReportCitation[]
+
+  @@unique([reportId, key])
+  @@index([reportId, position])
+}
+
+model ReportBlock {
+  id          String         @id @default(uuid())
+  sectionId   String
+  type        ReportBlockType
+  position    Int
+  content     Json?
+  dataRef     Json?
+  aiGenerated Boolean        @default(false)
+  aiStatus    String?
+  createdAt   DateTime       @default(now())
+  updatedAt   DateTime       @updatedAt
+
+  section ReportSection @relation(fields: [sectionId], references: [id], onDelete: Cascade)
+  citations ReportCitation[]
+
+  @@index([sectionId, position])
+}
+
+model ReportCitation {
+  id             String   @id @default(uuid())
+  reportId       String
+  sectionId      String?
+  blockId        String?
+  targetType     String   // EVIDENCE | ENTITY | RELATIONSHIP | TIMELINE_EVENT | INVESTIGATION | NOTE | REPORT
+  targetId       String
+  sourceRef      String?
+  snippet        String?
+  order          Int      @default(0)
+  organizationId String
+  createdById    String
+  createdAt      DateTime @default(now())
+
+  report     Report @relation(fields: [reportId], references: [id], onDelete: Cascade)
+  section    ReportSection? @relation(fields: [sectionId], references: [id], onDelete: SetNull)
+  block      ReportBlock?   @relation(fields: [blockId], references: [id], onDelete: SetNull)
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  createdBy  User   @relation(fields: [createdById], references: [id])
+
+  @@index([reportId])
+  @@index([blockId])
+  @@index([targetType, targetId])
+  @@index([organizationId])
+}
+
+model ReportReview {
+  id          String              @id @default(uuid())
+  reportId    String
+  reviewerId  String
+  decision    ReportReviewDecision
+  comment     String?
+  status      String              @default("OPEN")
+  createdAt   DateTime            @default(now())
+
+  report   Report @relation(fields: [reportId], references: [id], onDelete: Cascade)
+  reviewer User   @relation("report_reviewer", fields: [reviewerId], references: [id])
+
+  @@index([reportId, createdAt])
+}
+
+model ReportApproval {
+  id              String   @id @default(uuid())
+  reportId        String
+  reportVersionId String?
+  approverId      String
+  decision        String   // APPROVED | REJECTED
+  comment         String?
+  createdAt       DateTime @default(now())
+
+  report   Report @relation(fields: [reportId], references: [id], onDelete: Cascade)
+  approver User   @relation("report_approver", fields: [approverId], references: [id])
+
+  @@index([reportId, createdAt])
+}
+
+// ---------------------------------------------------------------------------
+// Phase 5 — Collaboration
+// ---------------------------------------------------------------------------
+
+model Comment {
+  id               String            @id @default(uuid())
+  authorId         String
+  organizationId   String
+  investigationId  String?
+  targetType       CommentTargetType
+  targetId         String
+  body             String
+  resolvedAt       DateTime?
+  createdAt        DateTime          @default(now())
+  updatedAt        DateTime          @updatedAt
+
+  author         User            @relation(fields: [authorId], references: [id])
+  organization   Organization    @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  investigation  Investigation?  @relation(fields: [investigationId], references: [id], onDelete: SetNull)
+  replies        CommentReply[]
+  mentions       Mention[]
+
+  @@index([targetType, targetId, createdAt])
+  @@index([investigationId, createdAt])
+  @@index([organizationId])
+}
+
+model CommentReply {
+  id             String   @id @default(uuid())
+  commentId      String
+  parentId       String?
+  authorId       String
+  body           String
+  organizationId String
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  comment    Comment @relation(fields: [commentId], references: [id], onDelete: Cascade)
+  parent     CommentReply? @relation("reply_parent", fields: [parentId], references: [id], onDelete: SetNull)
+  children   CommentReply[] @relation("reply_parent")
+  author     User    @relation(fields: [authorId], references: [id])
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  mentions   Mention[]
+
+  @@index([commentId, createdAt])
+  @@index([organizationId])
+}
+
+model Mention {
+  id               String   @id @default(uuid())
+  userId           String
+  mentionedById    String
+  organizationId   String
+  investigationId  String?
+  commentId        String?
+  replyId          String?
+  readAt           DateTime?
+  createdAt        DateTime @default(now())
+
+  user          User         @relation("mention_user", fields: [userId], references: [id], onDelete: Cascade)
+  mentionedBy   User         @relation("mention_mentionedBy", fields: [mentionedById], references: [id])
+  organization  Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  investigation Investigation? @relation(fields: [investigationId], references: [id], onDelete: SetNull)
+  comment       Comment?     @relation(fields: [commentId], references: [id], onDelete: SetNull)
+  reply         CommentReply? @relation(fields: [replyId], references: [id], onDelete: SetNull)
+
+  @@index([userId, readAt])
+  @@index([organizationId])
+}
+
+model Notification {
+  id               String    @id @default(uuid())
+  userId           String
+  organizationId   String
+  kind             String    // COMMENT | MENTION | COMMENT_REPLY | REPORT_STATUS | EVIDENCE_UPDATE | EVIDENCE_PROCESSING_COMPLETED | INVESTIGATION_ASSIGNMENT | TASK_ASSIGNMENT | MEMBER_ADDED | AI_READY | COLLABORATION_ACTIVITY
+  title            String
+  body             String?
+  targetType       String?
+  targetId         String?
+  investigationId  String?
+  actorId          String?
+  readAt           DateTime?
+  createdAt        DateTime  @default(now())
+
+  user          User          @relation("notification_user", fields: [userId], references: [id], onDelete: Cascade)
+  actor         User?         @relation("notification_actor", fields: [actorId], references: [id], onDelete: SetNull)
+  organization  Organization  @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  investigation Investigation? @relation(fields: [investigationId], references: [id], onDelete: SetNull)
+
+  @@index([userId, readAt, createdAt])
+  @@index([organizationId, createdAt])
+}
+
+model PresenceSession {
+  id             String   @id @default(uuid())
+  userId         String
+  organizationId String
+  resourceType   String   // INVESTIGATION | EVIDENCE | REPORT
+  resourceId     String
+  sessionKey     String
+  status         String   @default("ACTIVE") // ACTIVE | IDLE | AWAY | OFFLINE
+  lastSeenAt     DateTime @default(now())
+  createdAt      DateTime @default(now())
+
+  user         User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  organization Organization  @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  @@unique([resourceType, resourceId, sessionKey])
+  @@index([resourceId, lastSeenAt])
+  @@index([organizationId])
+}
+
+model CollaborationEvent {
+  id               String   @id @default(uuid())
+  organizationId   String
+  investigationId  String?
+  type             String
+  resourceType     String?
+  resourceId       String?
+  actorId          String?
+  payload          Json?
+  createdAt        DateTime @default(now())
+
+  organization  Organization  @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  investigation Investigation? @relation(fields: [investigationId], references: [id], onDelete: SetNull)
+  actor         User?         @relation("collab_actor", fields: [actorId], references: [id], onDelete: SetNull)
+
+  @@index([investigationId, createdAt])
+  @@index([organizationId, createdAt])
 }

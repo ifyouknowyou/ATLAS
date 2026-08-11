@@ -105,6 +105,27 @@ export class RealtimeService {
     this.publish(principal.organizationId, message);
   }
 
+  /**
+   * Deliver a message to a single user's connections (notifications, presence,
+   * user-scoped events — Phase 5). Tenant + investigation scoping still apply.
+   */
+  publishToUser(
+    organizationId: string,
+    userId: string,
+    message: Omit<StreamMessage, 'id' | 'createdAt'>,
+  ): void {
+    const createdAt = new Date().toISOString();
+    for (const connection of this.connections.values()) {
+      if (connection.principal.organizationId !== organizationId) continue;
+      if (connection.principal.userId !== userId) continue;
+      const scoped = message.investigationId
+        ? connection.admin || connection.investigations.has(message.investigationId)
+        : connection.admin || connection.investigations.size > 0;
+      if (!scoped) continue;
+      this.deliver(connection, { ...message, userId, createdAt });
+    }
+  }
+
   private deliver(connection: Connection, msg: Omit<StreamMessage, 'id'>): void {
     if (connection.subject.closed) return;
     connection.seq += 1;

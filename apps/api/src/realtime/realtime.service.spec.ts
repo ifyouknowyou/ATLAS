@@ -100,4 +100,36 @@ describe('RealtimeService', () => {
     service.publish('org1', { type: 'graph', investigationId: 'invA', message: 'after' });
     expect((service as unknown as { connections: Map<string, unknown> }).connections.size).toBe(0);
   });
+
+  it('publishToUser delivers only to that user in the same org', async () => {
+    const { service } = makeService({ memberships: [{ investigationId: 'invA' }] });
+    await service.subscribe('cu1', member);
+    await service.subscribe('cu2', admin);
+    const received: string[] = [];
+    const sub1 = service.open('cu1').subscribe((ev) => received.push(JSON.parse(String(ev.data)).message));
+    const sub2 = service.open('cu2').subscribe((ev) => received.push(JSON.parse(String(ev.data)).message));
+
+    service.publishToUser('org1', 'u2', {
+      type: 'notification',
+      investigationId: 'invA',
+      message: 'notify-me',
+    });
+    sub1.unsubscribe();
+    sub2.unsubscribe();
+    expect(received).toEqual(['notify-me']);
+  });
+
+  it('publishToUser respects org isolation', async () => {
+    const { service } = makeService({ memberships: [{ investigationId: 'invA' }] });
+    await service.subscribe('cx', member);
+    const received: string[] = [];
+    const sub = service.open('cx').subscribe((ev) => received.push(JSON.parse(String(ev.data)).message));
+
+    service.publishToUser('org-other', 'u2', {
+      type: 'notification',
+      message: 'wrong-org',
+    });
+    sub.unsubscribe();
+    expect(received).toEqual([]);
+  });
 });

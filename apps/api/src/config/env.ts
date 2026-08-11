@@ -17,6 +17,14 @@ export interface AppConfig {
   anthropicApiKey?: string;
   /** Claude model to use for the assistant (default claude-opus-5). */
   anthropicModel: string;
+  /** Root directory for evidence file storage (Phase 5). */
+  storageDir: string;
+  /** Maximum accepted upload size in MiB (Phase 5). */
+  maxUploadMb: number;
+  /** Lifetime (seconds) of short-lived signed download URLs (Phase 5). */
+  signedUrlTtlS: number;
+  /** Background job poll interval (ms) for the in-process queue (Phase 5). */
+  jobsPollIntervalMs: number;
 }
 
 export type RawEnv = Record<string, unknown> & NodeJS.ProcessEnv;
@@ -75,6 +83,12 @@ export function validateEnv(env: RawEnv): AppConfig {
     anthropicModel: isNonEmptyString(env.ANTHROPIC_MODEL)
       ? env.ANTHROPIC_MODEL
       : 'claude-opus-5',
+    storageDir: isNonEmptyString(env.ATLAS_STORAGE_DIR)
+      ? env.ATLAS_STORAGE_DIR
+      : '/home/who/All Project/ATLAS/apps/api/.storage',
+    maxUploadMb: intValue(env.ATLAS_MAX_UPLOAD_MB, 25, 'ATLAS_MAX_UPLOAD_MB'),
+    signedUrlTtlS: intValue(env.ATLAS_SIGNED_URL_TTL_S, 120, 'ATLAS_SIGNED_URL_TTL_S'),
+    jobsPollIntervalMs: intValue(env.ATLAS_JOBS_POLL_INTERVAL_MS, 2000, 'ATLAS_JOBS_POLL_INTERVAL_MS'),
   };
   return snapshot;
 }

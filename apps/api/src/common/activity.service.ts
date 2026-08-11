@@ -25,7 +25,26 @@ export type ActivityType =
   | 'MEMBER_REMOVED'
   | 'MEMBER_ROLE_CHANGED'
   | 'AI_CHAT_CREATED'
-  | 'AI_SUMMARY_CREATED';
+  | 'AI_SUMMARY_CREATED'
+  | 'EVIDENCE_REMOVED'
+  | 'EVIDENCE_UPLOADED'
+  | 'EVIDENCE_ANNOTATED'
+  | 'EVIDENCE_CLASSIFIED'
+  | 'EVIDENCE_PROCESSED'
+  | 'REPORT_CREATED'
+  | 'REPORT_UPDATED'
+  | 'REPORT_SUBMITTED'
+  | 'REPORT_REVIEWED'
+  | 'REPORT_APPROVED'
+  | 'REPORT_REJECTED'
+  | 'REPORT_PUBLISHED'
+  | 'REPORT_EXPORTED'
+  | 'COMMENT_ADDED'
+  | 'MENTION_ADDED'
+  | 'PRESENCE_UPDATED'
+  | 'AI_ANALYSIS_COMPLETED'
+  | 'TASK_CREATED_FROM_AI'
+  | 'COLLABORATION_ACTIVITY';
 
 export interface ActivityInput {
   type: ActivityType;
@@ -86,7 +105,9 @@ export class ActivityService {
     return promise;
   }
 
-  private streamType(type: ActivityType): 'graph' | 'timeline' | 'activity' {
+  private streamType(
+    type: ActivityType,
+  ): 'graph' | 'timeline' | 'activity' | 'evidence' | 'report' | 'comment' | 'presence' {
     if (
       type === 'ENTITY_CREATED' ||
       type === 'ENTITY_UPDATED' ||
@@ -96,6 +117,37 @@ export class ActivityService {
       type === 'RELATIONSHIP_REMOVED'
     ) {
       return 'graph';
+    }
+    if (
+      type === 'EVIDENCE_ADDED' ||
+      type === 'EVIDENCE_REMOVED' ||
+      type === 'EVIDENCE_UPLOADED' ||
+      type === 'EVIDENCE_ANNOTATED' ||
+      type === 'EVIDENCE_CLASSIFIED' ||
+      type === 'EVIDENCE_PROCESSED'
+    ) {
+      return 'evidence';
+    }
+    if (
+      type === 'REPORT_CREATED' ||
+      type === 'REPORT_UPDATED' ||
+      type === 'REPORT_SUBMITTED' ||
+      type === 'REPORT_REVIEWED' ||
+      type === 'REPORT_APPROVED' ||
+      type === 'REPORT_REJECTED' ||
+      type === 'REPORT_PUBLISHED' ||
+      type === 'REPORT_EXPORTED'
+    ) {
+      return 'report';
+    }
+    if (
+      type === 'COMMENT_ADDED' ||
+      type === 'MENTION_ADDED'
+    ) {
+      return 'comment';
+    }
+    if (type === 'PRESENCE_UPDATED') {
+      return 'presence';
     }
     return 'activity';
   }

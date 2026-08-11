@@ -23,6 +23,12 @@ import { TimelineModule } from './timeline/timeline.module';
 import { RealtimeModule } from './realtime/realtime.module';
 import { AiModule } from './ai/ai.module';
 import { ActivityModule } from './common/activity.service';
+import { EvidenceStorageModule } from './evidence/storage/evidence-storage.module';
+import { RateLimitModule } from './rate-limit/rate-limit.module';
+import { RateLimitGuard } from './rate-limit/rate-limit.guard';
+import { JobsModule } from './jobs/jobs.module';
+import { ReportsModule } from './reports/reports.module';
+import { CollaborationModule } from './collaboration/collaboration.module';
 
 @Module({
   imports: [
@@ -30,6 +36,9 @@ import { ActivityModule } from './common/activity.service';
     PrismaModule,
     AuthModule,
     ActivityModule,
+    EvidenceStorageModule,
+    RateLimitModule,
+    JobsModule,
     HealthModule,
     UsersModule,
     OrganizationsModule,
@@ -46,11 +55,14 @@ import { ActivityModule } from './common/activity.service';
     TimelineModule,
     RealtimeModule,
     AiModule,
+    ReportsModule,
+    CollaborationModule,
   ],
   providers: [
-    // Authentication first, then permission evaluation, for every request.
+    // Authentication first, then permission evaluation, then rate limiting.
     { provide: APP_GUARD, useClass: AuthGuard },
     { provide: APP_GUARD, useClass: PermissionsGuard },
+    { provide: APP_GUARD, useClass: RateLimitGuard },
     { provide: APP_FILTER, useClass: AllExceptionsFilter },
   ],
 })

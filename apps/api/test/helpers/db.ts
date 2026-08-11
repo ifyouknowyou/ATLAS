@@ -47,7 +47,26 @@ let sequence = 0;
 export async function resetDatabase(prisma: PrismaClient): Promise<void> {
   // Child-first order (FK dependencies removed before parents). Runs as
   // sequential queries — avoids Prisma interactive transactions in jest.
+  await prisma.mention.deleteMany();
+  await prisma.commentReply.deleteMany();
+  await prisma.comment.deleteMany();
+  await prisma.notification.deleteMany();
+  await prisma.presenceSession.deleteMany();
+  await prisma.collaborationEvent.deleteMany();
+  await prisma.reportApproval.deleteMany();
+  await prisma.reportReview.deleteMany();
+  await prisma.reportCitation.deleteMany();
+  await prisma.reportBlock.deleteMany();
+  await prisma.reportSection.deleteMany();
+  await prisma.reportVersion.deleteMany();
+  await prisma.reportTemplate.deleteMany();
   await prisma.report.deleteMany();
+  await prisma.evidenceAccessEvent.deleteMany();
+  await prisma.evidenceProcessingJob.deleteMany();
+  await prisma.evidenceAnnotation.deleteMany();
+  await prisma.evidenceLink.deleteMany();
+  await prisma.evidenceVersion.deleteMany();
+  await prisma.backgroundJob.deleteMany();
   await prisma.timelineEvent.deleteMany();
   await prisma.note.deleteMany();
   await prisma.evidence.deleteMany();

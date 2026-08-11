@@ -201,7 +201,7 @@ describe('Phase 4 AI engine (e2e)', () => {
     expect(history.body.map((m: { role: string }) => m.role)).toEqual(
       expect.arrayContaining(['USER', 'ASSISTANT']),
     );
-    expect(history.body.every((m: { investigationId?: never }) => true)).toBe(true);
+    expect(history.body.every((_m: { investigationId?: never }) => true)).toBe(true);
   });
 
   it('does not leak another org conversation through org-wide messages', async () => {

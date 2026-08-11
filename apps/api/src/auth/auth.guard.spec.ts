@@ -17,6 +17,10 @@ const config: AppConfig = {
   demoOwnerEmail: 'admin@atlas.demo',
   demoOwnerPassword: 'x',
   anthropicModel: 'claude-opus-5',
+  storageDir: '/tmp/atlas-test-storage',
+  maxUploadMb: 5,
+  signedUrlTtlS: 120,
+  jobsPollIntervalMs: 2000,
 };
 
 type PrismaOverrides = {

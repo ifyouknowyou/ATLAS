@@ -37,3 +37,6 @@ tmp/
 
 # vercel / next
 .vercel
+
+# Phase 5 — evidence file storage
+.storage/
