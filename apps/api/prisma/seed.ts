@@ -12,6 +12,7 @@
  */
 import {
   Classification,
+  CommentTargetType,
   EvidenceStatus,
   EvidenceType,
   InvestigationMemberRole,
@@ -20,6 +21,8 @@ import {
   PrismaClient,
   RelationshipDirection,
   RelationshipType,
+  ReportBlockType,
+  ReportTemplateKind,
   Role,
   TaskStatus,
 } from '@prisma/client';
@@ -415,6 +418,15 @@ async function main(): Promise<void> {
     ],
   });
 
+  // Phase 5 — Evidence Vault + Reports + Collaboration demo data.
+  const phase5 = await seedPhase5({
+    orgId: org.id,
+    workspaceId: workspace.id,
+    adminId: userId(ADMIN_EMAIL),
+    analystId: userId(ANALYST_EMAIL),
+    investigationIds,
+  });
+
   // eslint-disable-next-line no-console
   console.log(
     JSON.stringify({
@@ -428,6 +440,7 @@ async function main(): Promise<void> {
       evidence: EVIDENCE.length,
       notes: NOTES.length,
       tasks: TASKS.length,
+      phase5,
     }),
   );
 }
@@ -473,9 +486,286 @@ function resolveEntity(refs: Map<string, EntityRef>, name: string): string | und
   return undefined;
 }
 
+/**
+ * Phase 5 demo seed — report templates, a sample report with sections/blocks/
+ * citations, evidence versions + chain-of-custody, comments, notifications and
+ * presence rows. All demo-marked; never mixed with real data.
+ */
+async function seedPhase5(input: {
+  orgId: string;
+  workspaceId: string;
+  adminId: string;
+  analystId: string;
+  investigationIds: string[];
+}): Promise<{ templates: number; reports: number; comments: number; notifications: number }> {
+  const { orgId, workspaceId, analystId, investigationIds } = input;
+  const adminId = input.adminId;
+
+  const templateRows = await prisma.reportTemplate.createMany({
+    data: [
+      { name: 'Investigation Report', kind: ReportTemplateKind.INVESTIGATION_REPORT, description: 'Full investigation write-up', organizationId: orgId, isSystem: true, createdById: adminId, sections: [
+        { key: 'cover', title: 'Cover', isRequired: true },
+        { key: 'executive-summary', title: 'Executive Summary', isRequired: true },
+        { key: 'overview', title: 'Investigation Overview', isRequired: true },
+        { key: 'entities', title: 'Entities', isRequired: false },
+        { key: 'relationships', title: 'Relationships', isRequired: false },
+        { key: 'evidence', title: 'Evidence', isRequired: true },
+        { key: 'timeline', title: 'Timeline', isRequired: false },
+        { key: 'findings', title: 'Findings', isRequired: true },
+        { key: 'ai-analysis', title: 'AI Analysis', isRequired: false },
+        { key: 'limitations', title: 'Limitations', isRequired: false },
+        { key: 'sources', title: 'Sources', isRequired: true },
+      ] },
+      { name: 'Executive Intelligence Brief', kind: ReportTemplateKind.EXECUTIVE_INTELLIGENCE_BRIEF, description: 'Condensed leadership brief', organizationId: orgId, isSystem: true, createdById: adminId, sections: [
+        { key: 'cover', title: 'Cover', isRequired: true },
+        { key: 'key-judgments', title: 'Key Judgments', isRequired: true },
+        { key: 'situation', title: 'Situation', isRequired: true },
+        { key: 'evidence', title: 'Evidence Highlights', isRequired: false },
+        { key: 'sources', title: 'Sources', isRequired: true },
+      ] },
+    ],
+  });
+
+  // A sample report with sections + blocks + citations.
+  const demoEntity = await prisma.entity.findFirst({
+    where: { organizationId: orgId },
+    orderBy: { createdAt: 'asc' },
+  });
+  const demoEvidence = await prisma.evidence.findFirst({
+    where: { organizationId: orgId },
+    orderBy: { createdAt: 'asc' },
+  });
+  const demoInv = investigationIds[0] ?? null;
+
+  const report = await prisma.report.create({
+    data: {
+      title: 'Investigation Alpha — Initial Intelligence Report (demo)',
+      description: 'Demo Phase 5 report constructed from the Phase 2 universe.',
+      classification: Classification.CONFIDENTIAL,
+      status: 'DRAFT',
+      investigationId: demoInv,
+      workspaceId,
+      organizationId: orgId,
+      createdById: analystId,
+    },
+  });
+
+  const sectionOrder = [
+    { key: 'cover', title: 'Cover', isRequired: true },
+    { key: 'executive-summary', title: 'Executive Summary', isRequired: true },
+    { key: 'overview', title: 'Investigation Overview', isRequired: true },
+    { key: 'evidence', title: 'Evidence', isRequired: true },
+    { key: 'findings', title: 'Findings', isRequired: true },
+    { key: 'sources', title: 'Sources', isRequired: true },
+  ];
+  const createdSections: Array<{ id: string; key: string }> = [];
+  for (let i = 0; i < sectionOrder.length; i += 1) {
+    createdSections.push(
+      await prisma.reportSection.create({
+        data: {
+          reportId: report.id,
+          key: sectionOrder[i].key,
+          title: sectionOrder[i].title,
+          position: i,
+          isRequired: sectionOrder[i].isRequired,
+        },
+      }),
+    );
+  }
+
+  const exec = createdSections.find((s) => s.key === 'executive-summary');
+  const evidence = createdSections.find((s) => s.key === 'evidence');
+  const findings = createdSections.find((s) => s.key === 'findings');
+
+  if (exec) {
+    await prisma.reportBlock.create({
+      data: {
+        sectionId: exec.id,
+        type: ReportBlockType.TEXT,
+        position: 0,
+        content: { text: 'Summary of the Meridian network investigation. Draft for review.' },
+        aiGenerated: false,
+      },
+    });
+    await prisma.reportBlock.create({
+      data: {
+        sectionId: exec.id,
+        type: ReportBlockType.AI_SUMMARY,
+        position: 1,
+        content: { text: 'AI-generated executive summary pending human review.' },
+        aiGenerated: true,
+        aiStatus: 'REVIEW_REQUIRED',
+      },
+    });
+  }
+  if (evidence && demoEvidence) {
+    const block = await prisma.reportBlock.create({
+      data: {
+        sectionId: evidence.id,
+        type: ReportBlockType.EVIDENCE,
+        position: 0,
+        content: { title: demoEvidence.name },
+        dataRef: { evidenceId: demoEvidence.id },
+        aiGenerated: false,
+      },
+    });
+    const citation = await prisma.reportCitation.create({
+      data: {
+        reportId: report.id,
+        sectionId: evidence.id,
+        blockId: block.id,
+        targetType: 'EVIDENCE',
+        targetId: demoEvidence.id,
+        snippet: demoEvidence.name,
+        order: 0,
+        organizationId: orgId,
+        createdById: analystId,
+      },
+    });
+    void citation;
+  }
+  if (findings && demoEntity) {
+    await prisma.reportBlock.create({
+      data: {
+        sectionId: findings.id,
+        type: ReportBlockType.ENTITY,
+        position: 0,
+        content: { title: demoEntity.name },
+        dataRef: { entityId: demoEntity.id },
+        aiGenerated: false,
+      },
+    });
+  }
+
+  // Evidence version + chain-of-custody rows for demo evidence.
+  let evidenceVersions = 0;
+  const demoEvidenceRows = await prisma.evidence.findMany({
+    where: { organizationId: orgId },
+    take: 3,
+  });
+  for (const ev of demoEvidenceRows) {
+    const version = await prisma.evidenceVersion.create({
+      data: {
+        evidenceId: ev.id,
+        versionNumber: 1,
+        storageKey: `seed/${ev.id}/v1`,
+        hash: (ev.hash ?? 'e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855').slice(0, 64),
+        size: ev.size,
+        mimeType: ev.mimeType,
+        originalFilename: ev.name,
+        changeType: 'UPLOAD',
+        changeSummary: 'Seeded demo file',
+        organizationId: orgId,
+        createdById: analystId,
+      },
+    });
+    await prisma.evidenceAccessEvent.create({
+      data: {
+        evidenceId: ev.id,
+        versionId: version.id,
+        action: 'UPLOADED',
+        actorType: 'USER',
+        actorId: analystId,
+        organizationId: orgId,
+        safeMetadata: { demo: true },
+      },
+    });
+    await prisma.evidence.update({
+      where: { id: ev.id },
+      data: { storageKey: `seed/${ev.id}/v1`, originalFilename: ev.name },
+    });
+    evidenceVersions += 1;
+  }
+
+  // Comments + notifications.
+  let comments = 0;
+  let notifications = 0;
+  if (demoEvidence && demoInv) {
+    const comment = await prisma.comment.create({
+      data: {
+        authorId: analystId,
+        organizationId: orgId,
+        investigationId: demoInv,
+        targetType: CommentTargetType.EVIDENCE,
+        targetId: demoEvidence.id,
+        body: '@D. Reyes (Demo Owner) — please cross-check the hash against the source archive.',
+      },
+    });
+    comments += 1;
+    await prisma.commentReply.create({
+      data: {
+        commentId: comment.id,
+        authorId: adminId,
+        body: 'Noted — will verify against the registry snapshot.',
+        organizationId: orgId,
+      },
+    });
+    comments += 1;
+    await prisma.notification.create({
+      data: {
+        userId: adminId,
+        organizationId: orgId,
+        kind: 'COMMENT',
+        title: 'New comment on evidence',
+        body: 'Please cross-check the hash against the source archive.',
+        targetType: 'EVIDENCE',
+        targetId: demoEvidence.id,
+        investigationId: demoInv,
+        actorId: analystId,
+      },
+    });
+    notifications += 1;
+  }
+
+  await prisma.activityEvent.create({
+    data: {
+      type: 'REPORT_CREATED',
+      message: 'Report "Investigation Alpha — Initial Intelligence Report (demo)" created',
+      investigationId: demoInv,
+      workspaceId,
+      organizationId: orgId,
+      userId: analystId,
+      metadata: { demo: true, reportId: report.id },
+    },
+  });
+
+  return {
+    templates: templateRows.count,
+    reports: 1,
+    comments,
+    notifications,
+  };
+}
+
 async function clearDemoChildren(orgId: string): Promise<void> {
-  // Child-first order (FK dependencies removed before parents).
+  // Child-first order (FK dependencies removed before parents). Phase 5 models
+  // come first (comments/reports/evidence children depend on those parents).
+  await prisma.mention.deleteMany({ where: { organizationId: orgId } });
+  await prisma.commentReply.deleteMany({ where: { organizationId: orgId } });
+  await prisma.comment.deleteMany({ where: { organizationId: orgId } });
+  await prisma.notification.deleteMany({ where: { organizationId: orgId } });
+  await prisma.presenceSession.deleteMany({ where: { organizationId: orgId } });
+  await prisma.collaborationEvent.deleteMany({ where: { organizationId: orgId } });
+  await prisma.reportApproval.deleteMany({
+    where: { report: { organizationId: orgId } },
+  });
+  await prisma.reportReview.deleteMany({
+    where: { report: { organizationId: orgId } },
+  });
+  await prisma.reportCitation.deleteMany({ where: { organizationId: orgId } });
+  await prisma.reportBlock.deleteMany({ where: { section: { report: { organizationId: orgId } } } });
+  await prisma.reportSection.deleteMany({
+    where: { report: { organizationId: orgId } },
+  });
+  await prisma.reportVersion.deleteMany({ where: { organizationId: orgId } });
+  await prisma.reportTemplate.deleteMany({ where: { organizationId: orgId } });
   await prisma.report.deleteMany({ where: { organizationId: orgId } });
+  await prisma.evidenceAccessEvent.deleteMany({ where: { organizationId: orgId } });
+  await prisma.evidenceProcessingJob.deleteMany({ where: { organizationId: orgId } });
+  await prisma.evidenceAnnotation.deleteMany({ where: { organizationId: orgId } });
+  await prisma.evidenceLink.deleteMany({ where: { organizationId: orgId } });
+  await prisma.evidenceVersion.deleteMany({ where: { organizationId: orgId } });
+  await prisma.backgroundJob.deleteMany({ where: { organizationId: orgId } });
   await prisma.timelineEvent.deleteMany({ where: { organizationId: orgId } });
   await prisma.note.deleteMany({ where: { organizationId: orgId } });
   await prisma.evidence.deleteMany({ where: { organizationId: orgId } });

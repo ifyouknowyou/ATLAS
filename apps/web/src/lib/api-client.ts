@@ -78,4 +78,38 @@ export const api = {
     apiRequest<T>(path, { token, method: 'PATCH', body }),
   delete: <T>(path: string, token?: string | null) =>
     apiRequest<T>(path, { token, method: 'DELETE' }),
+  /** Multipart upload (evidence files). */
+  upload: <T>(path: string, file: File, fields: Record<string, string>, token?: string | null) =>
+    apiRequest<T>(path, {
+      token,
+      method: 'POST',
+      body: buildFormData(file, fields),
+      headers: {},
+    }),
+  /** Fetch a binary blob (e.g. report export). */
+  download: (path: string, token?: string | null) =>
+    fetch(`${API_PREFIX}${path}`, {
+      headers: token ? { authorization: `Bearer ${token}` } : {},
+      credentials: 'omit',
+    }).then(async (response) => {
+      if (!response.ok) {
+        const payload = (await response.json().catch(() => null)) as ApiErrorBody | null;
+        throw new ApiError(
+          payload?.error.code ?? API_ERROR_CODES.INTERNAL,
+          payload?.error.message ?? `Request failed (${response.status})`,
+          response.status,
+          response.headers.get('x-request-id') ?? undefined,
+        );
+      }
+      return response.blob();
+    }),
 };
+
+function buildFormData(file: File, fields: Record<string, string>): FormData {
+  const form = new FormData();
+  form.append('file', file, file.name);
+  for (const [key, value] of Object.entries(fields)) {
+    form.append(key, value);
+  }
+  return form;
+}

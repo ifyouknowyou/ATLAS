@@ -12,7 +12,7 @@ import {
   Query,
   Req,
 } from '@nestjs/common';
-import { IsEnum, IsOptional, IsString, MaxLength, MinLength } from 'class-validator';
+import { IsEnum, IsString, MaxLength, MinLength } from 'class-validator';
 import { CommentTargetType } from '@prisma/client';
 import { AuthenticatedRequest } from '../auth/principal';
 import { RequirePermission } from '../rbac/require-permission.decorator';

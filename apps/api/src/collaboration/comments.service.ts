@@ -244,24 +244,20 @@ export class CommentsService {
     target: { investigationId: string | null },
     body: string,
   ): Promise<string[]> {
-    const usernames = [...body.matchAll(MENTION_RE)].map((m) => m[1]);
+    const usernames = [...body.matchAll(MENTION_RE)].map((m) => m[1].toLowerCase());
     if (usernames.length === 0) return [];
+    // Resolve against displayName (the @handle users type) in this org.
     const users = await this.prisma.user.findMany({
-      where: { email: { in: usernames.map((u) => `${u.toLowerCase()}`) } },
-      select: { id: true, email: true, displayName: true },
+      where: {
+        displayName: { in: usernames, mode: 'insensitive' },
+        memberships: { some: { organizationId: principal.organizationId } },
+      },
+      select: { id: true, displayName: true, memberships: { select: { role: true } } },
       take: 20,
     });
     const result: string[] = [];
     for (const user of users) {
-      const membership = await this.prisma.membership.findUnique({
-        where: {
-          userId_organizationId: {
-            userId: user.id,
-            organizationId: principal.organizationId,
-          },
-        },
-        select: { role: true },
-      });
+      const membership = user.memberships[0];
       if (!membership) continue; // not in this org — silently dropped
       if (target.investigationId) {
         const member = await this.prisma.investigationMember.findUnique({

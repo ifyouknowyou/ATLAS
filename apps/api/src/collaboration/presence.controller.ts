@@ -9,7 +9,7 @@ import {
   Post,
   Req,
 } from '@nestjs/common';
-import { IsEnum, IsOptional, IsString, MaxLength } from 'class-validator';
+import { IsOptional, IsString, MaxLength } from 'class-validator';
 import { AuthenticatedRequest } from '../auth/principal';
 import { RequirePermission } from '../rbac/require-permission.decorator';
 import { RateLimit } from '../rate-limit/rate-limit.decorator';

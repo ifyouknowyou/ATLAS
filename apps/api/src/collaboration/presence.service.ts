@@ -32,7 +32,7 @@ export class PresenceService {
     await this.access.requireTarget(principal, resourceType, resourceId);
     const key = sessionKey ?? 'default';
 
-    const session = await this.prisma.presenceSession.upsert({
+    await this.prisma.presenceSession.upsert({
       where: {
         resourceType_resourceId_sessionKey: { resourceType, resourceId, sessionKey: key },
       },

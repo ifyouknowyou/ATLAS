@@ -42,7 +42,7 @@ export class CollaborationEventsService {
     });
 
     await this.activity.record(principal, {
-      type: this.mapToActivityType(input.type),
+      type: this.mapToActivityType(input.type) as never,
       message: input.type,
       investigationId: input.investigationId,
       metadata: { resourceType: input.resourceType, resourceId: input.resourceId },

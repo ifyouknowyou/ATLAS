@@ -141,6 +141,10 @@ export class ListEvidenceQueryDto extends PageQueryDto {
   status?: EvidenceStatus;
 
   @IsOptional()
+  @IsEnum(Classification)
+  classification?: Classification;
+
+  @IsOptional()
   @IsUUID()
   investigationId?: string;
 

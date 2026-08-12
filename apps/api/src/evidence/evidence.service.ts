@@ -26,6 +26,7 @@ export class EvidenceService {
     const where = this.access.listEvidenceWhere(principal) as Record<string, unknown>;
     if (query.type) where.kind = query.type;
     if (query.status) where.status = query.status;
+    if (query.classification) where.classification = query.classification;
     if (query.investigationId) where.investigationId = query.investigationId;
     if (query.q) {
       where.OR = [{ name: { contains: query.q, mode: 'insensitive' } }];

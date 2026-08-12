@@ -5,6 +5,7 @@ import { useState } from 'react';
 import { Boxes, LogOut, Search, UserCircle2 } from 'lucide-react';
 import { useAuth } from '@/lib/auth-store';
 import { pageTitleFor } from '@/lib/navigation';
+import { NotificationBell } from '@/components/ui/NotificationBell';
 
 export function TopBar() {
   const pathname = usePathname();
@@ -49,6 +50,8 @@ export function TopBar() {
           <Boxes className="h-3.5 w-3.5 text-phosphor-dim" />
           WORKSPACE · {principal?.workspaceId?.slice(0, 8) ?? 'ACTIVE'}
         </span>
+
+        <NotificationBell />
 
         <div className="flex items-center gap-2 rounded border border-void-line px-2.5 py-1.5">
           <UserCircle2 className="h-4 w-4 text-phosphor-dim" />

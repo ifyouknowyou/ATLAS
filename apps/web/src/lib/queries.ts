@@ -177,6 +177,7 @@ export function useRelationships(params?: {
 export function useEvidence(params?: {
   type?: string;
   status?: string;
+  classification?: string;
   investigationId?: string;
   q?: string;
   limit?: number;
@@ -681,5 +682,427 @@ export function useAiMessages(investigationId?: string) {
         token,
       ),
     enabled: Boolean(token),
+  });
+}
+
+// ---------------------------------------------------------------------------
+// Phase 5 — Evidence Vault
+// ---------------------------------------------------------------------------
+
+export interface EvidenceDetail extends Record<string, unknown> {
+  id: string;
+  name: string;
+  kind: string;
+  classification: string;
+  status: string;
+  hash?: string | null;
+  mimeType?: string | null;
+  size?: number | null;
+  processingStatus?: string | null;
+  investigationId?: string | null;
+  createdAt: string;
+}
+
+export function useEvidenceDetail(id?: string) {
+  const token = useToken();
+  return useQuery({
+    queryKey: ['evidence', id],
+    queryFn: () => api.get<EvidenceDetail>(`/evidence/${id}`, token),
+    enabled: Boolean(token && id),
+  });
+}
+
+export function useEvidenceVersions(id?: string) {
+  const token = useToken();
+  return useQuery({
+    queryKey: ['evidence-versions', id],
+    queryFn: () => api.get<unknown[]>(`/evidence/${id}/versions`, token),
+    enabled: Boolean(token && id),
+  });
+}
+
+export function useEvidenceAccessHistory(id?: string) {
+  const token = useToken();
+  return useQuery({
+    queryKey: ['evidence-access', id],
+    queryFn: () => api.get<unknown[]>(`/evidence/${id}/access-history`, token),
+    enabled: Boolean(token && id),
+  });
+}
+
+export function useEvidenceAnnotations(id?: string) {
+  const token = useToken();
+  return useQuery({
+    queryKey: ['evidence-annotations', id],
+    queryFn: () => api.get<unknown[]>(`/evidence/${id}/annotations`, token),
+    enabled: Boolean(token && id),
+  });
+}
+
+export function useEvidenceLinks(id?: string) {
+  const token = useToken();
+  return useQuery({
+    queryKey: ['evidence-links', id],
+    queryFn: () => api.get<unknown[]>(`/evidence/${id}/links`, token),
+    enabled: Boolean(token && id),
+  });
+}
+
+export function useEvidenceProcessing(id?: string) {
+  const token = useToken();
+  return useQuery({
+    queryKey: ['evidence-processing', id],
+    queryFn: () => api.get<unknown[]>(`/evidence/${id}/processing`, token),
+    enabled: Boolean(token && id),
+  });
+}
+
+export function useUploadEvidence() {
+  const token = useToken();
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (vars: { file: File; fields: Record<string, string> }) =>
+      api.upload<{ id: string; hash: string; versionNumber: number }>(
+        '/evidence/upload',
+        vars.file,
+        vars.fields,
+        token,
+      ),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: ['evidence'] });
+      void queryClient.invalidateQueries({ queryKey: ['dashboard'] });
+    },
+  });
+}
+
+export function useCreateEvidenceAnnotation(id?: string) {
+  const token = useToken();
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (body: Record<string, unknown>) =>
+      api.post(`/evidence/${id}/annotations`, body, token),
+    onSuccess: () => void queryClient.invalidateQueries({ queryKey: ['evidence-annotations'] }),
+  });
+}
+
+export function useResolveAnnotation() {
+  const token = useToken();
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ annotationId, resolved }: { annotationId: string; resolved: boolean }) =>
+      api.post(`/evidence/annotations/${annotationId}/resolve`, { resolved }, token),
+    onSuccess: () => void queryClient.invalidateQueries({ queryKey: ['evidence-annotations'] }),
+  });
+}
+
+export function useProcessEvidence(id?: string) {
+  const token = useToken();
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (kind: string) =>
+      api.post(`/evidence/${id}/process`, { kind }, token),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: ['evidence-processing'] });
+      void queryClient.invalidateQueries({ queryKey: ['evidence', id] });
+    },
+  });
+}
+
+export function useArchiveEvidence(id?: string) {
+  const token = useToken();
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (archived: boolean) =>
+      api.post(`/evidence/${id}/${archived ? 'archive' : 'restore'}`, {}, token),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: ['evidence'] });
+      void queryClient.invalidateQueries({ queryKey: ['evidence', id] });
+    },
+  });
+}
+
+// ---------------------------------------------------------------------------
+// Phase 5 — Reports
+// ---------------------------------------------------------------------------
+
+export interface ReportRow {
+  id: string;
+  title: string;
+  status: string;
+  classification: string;
+  aiGenerated: boolean;
+  aiStatus?: string | null;
+  currentVersion: number;
+  investigationId?: string | null;
+  publishedAt?: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export function useReports(params?: { status?: string; investigationId?: string; q?: string }) {
+  const token = useToken();
+  return useQuery({
+    queryKey: ['reports', params],
+    queryFn: () => api.get<{ items: ReportRow[]; total: number }>(`/reports${qs(params)}`, token),
+    enabled: Boolean(token),
+  });
+}
+
+export function useReport(id?: string) {
+  const token = useToken();
+  return useQuery({
+    queryKey: ['report', id],
+    queryFn: () => api.get<Record<string, unknown>>(`/reports/${id}`, token),
+    enabled: Boolean(token && id),
+  });
+}
+
+export function useReportTemplates() {
+  const token = useToken();
+  return useQuery({
+    queryKey: ['report-templates'],
+    queryFn: () => api.get<unknown[]>('/reports/templates', token),
+    enabled: Boolean(token),
+  });
+}
+
+export function useCreateReport() {
+  const token = useToken();
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (body: Record<string, unknown>) => api.post('/reports', body, token),
+    onSuccess: () => void queryClient.invalidateQueries({ queryKey: ['reports'] }),
+  });
+}
+
+export function useCreateReportFromTemplate() {
+  const token = useToken();
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (body: Record<string, unknown>) => api.post('/reports/from-template', body, token),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: ['reports'] });
+      void queryClient.invalidateQueries({ queryKey: ['report-templates'] });
+    },
+  });
+}
+
+export function useAddReportSection(id?: string) {
+  const token = useToken();
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (body: Record<string, unknown>) => api.post(`/reports/${id}/sections`, body, token),
+    onSuccess: () => void queryClient.invalidateQueries({ queryKey: ['report', id] }),
+  });
+}
+
+export function useAddReportBlock(id?: string) {
+  const token = useToken();
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ sectionId, body }: { sectionId: string; body: Record<string, unknown> }) =>
+      api.post(`/reports/${id}/sections/${sectionId}/blocks`, body, token),
+    onSuccess: () => void queryClient.invalidateQueries({ queryKey: ['report', id] }),
+  });
+}
+
+export function useUpdateReportBlock(id?: string) {
+  const token = useToken();
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ blockId, body }: { blockId: string; body: Record<string, unknown> }) =>
+      api.patch(`/reports/${id}/blocks/${blockId}`, body, token),
+    onSuccess: () => void queryClient.invalidateQueries({ queryKey: ['report', id] }),
+  });
+}
+
+export function useDeleteReportBlock(id?: string) {
+  const token = useToken();
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (blockId: string) => api.delete(`/reports/${id}/blocks/${blockId}`, token),
+    onSuccess: () => void queryClient.invalidateQueries({ queryKey: ['report', id] }),
+  });
+}
+
+export function useAddReportCitation(id?: string) {
+  const token = useToken();
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (body: Record<string, unknown>) => api.post(`/reports/${id}/citations`, body, token),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: ['report', id] });
+      void queryClient.invalidateQueries({ queryKey: ['report-citations'] });
+    },
+  });
+}
+
+export function useReportQuality(id?: string) {
+  const token = useToken();
+  return useQuery({
+    queryKey: ['report-quality', id],
+    queryFn: () => api.get<{ valid: boolean; issues: unknown[] }>(`/reports/${id}/quality`, token),
+    enabled: Boolean(token && id),
+  });
+}
+
+export function useReportVersions(id?: string) {
+  const token = useToken();
+  return useQuery({
+    queryKey: ['report-versions', id],
+    queryFn: () => api.get<unknown[]>(`/reports/${id}/versions`, token),
+    enabled: Boolean(token && id),
+  });
+}
+
+export function useSubmitReport(id?: string) {
+  const token = useToken();
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: () => api.post(`/reports/${id}/submit`, {}, token),
+    onSuccess: () => void queryClient.invalidateQueries({ queryKey: ['report', id] }),
+  });
+}
+
+export function useReviewReport(id?: string) {
+  const token = useToken();
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (body: { decision: string; comment?: string }) =>
+      api.post(`/reports/${id}/review`, body, token),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: ['report', id] });
+      void queryClient.invalidateQueries({ queryKey: ['reports'] });
+    },
+  });
+}
+
+export function useApproveReport(id?: string) {
+  const token = useToken();
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (comment?: string) => api.post(`/reports/${id}/approve`, { comment }, token),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: ['report', id] });
+      void queryClient.invalidateQueries({ queryKey: ['reports'] });
+    },
+  });
+}
+
+export function usePublishReport(id?: string) {
+  const token = useToken();
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: () => api.post(`/reports/${id}/publish`, {}, token),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: ['report', id] });
+      void queryClient.invalidateQueries({ queryKey: ['reports'] });
+    },
+  });
+}
+
+export function useAiGenerateReport(id?: string) {
+  const token = useToken();
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (body: { sectionKey?: string; prompt?: string }) =>
+      api.post(`/reports/${id}/ai/generate`, body, token),
+    onSuccess: () => void queryClient.invalidateQueries({ queryKey: ['report', id] }),
+  });
+}
+
+export function useAiReviewReport(id?: string) {
+  const token = useToken();
+  return useMutation({
+    mutationFn: () => api.post(`/reports/${id}/ai/review`, {}, token),
+  });
+}
+
+// ---------------------------------------------------------------------------
+// Phase 5 — Collaboration
+// ---------------------------------------------------------------------------
+
+export function useComments(targetType?: string, targetId?: string) {
+  const token = useToken();
+  return useQuery({
+    queryKey: ['comments', targetType, targetId],
+    queryFn: () =>
+      api.get<unknown[]>(`/comments${qs({ targetType, targetId })}`, token),
+    enabled: Boolean(token && targetType && targetId),
+  });
+}
+
+export function useCreateComment() {
+  const token = useToken();
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (body: { targetType: string; targetId: string; body: string }) =>
+      api.post('/comments', body, token),
+    onSuccess: () => void queryClient.invalidateQueries({ queryKey: ['comments'] }),
+  });
+}
+
+export function useReplyToComment() {
+  const token = useToken();
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ commentId, body }: { commentId: string; body: string }) =>
+      api.post(`/comments/${commentId}/replies`, { body }, token),
+    onSuccess: () => void queryClient.invalidateQueries({ queryKey: ['comments'] }),
+  });
+}
+
+export function useNotifications() {
+  const token = useToken();
+  return useQuery({
+    queryKey: ['notifications'],
+    queryFn: () => api.get<unknown[]>('/notifications', token),
+    enabled: Boolean(token),
+    refetchInterval: 30_000,
+  });
+}
+
+export function useUnreadCount() {
+  const token = useToken();
+  return useQuery({
+    queryKey: ['notifications-unread'],
+    queryFn: () => api.get<number>('/notifications/unread-count', token),
+    enabled: Boolean(token),
+    refetchInterval: 30_000,
+  });
+}
+
+export function useMarkNotificationRead() {
+  const token = useToken();
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (id: string) => api.patch(`/notifications/${id}/read`, {}, token),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: ['notifications'] });
+      void queryClient.invalidateQueries({ queryKey: ['notifications-unread'] });
+    },
+  });
+}
+
+export function useMarkAllNotificationsRead() {
+  const token = useToken();
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: () => api.patch('/notifications/read-all', {}, token),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: ['notifications'] });
+      void queryClient.invalidateQueries({ queryKey: ['notifications-unread'] });
+    },
+  });
+}
+
+export function usePresenceActive(resourceType?: string, resourceId?: string) {
+  const token = useToken();
+  return useQuery({
+    queryKey: ['presence', resourceType, resourceId],
+    queryFn: () =>
+      api.get<unknown[]>(`/collaboration/${resourceType}/${resourceId}/presence`, token),
+    enabled: Boolean(token && resourceType && resourceId),
+    refetchInterval: 30_000,
   });
 }
