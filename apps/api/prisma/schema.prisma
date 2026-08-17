@@ -1347,3 +1347,386 @@ model CollaborationEvent {
   @@index([investigationId, createdAt])
   @@index([organizationId, createdAt])
 }
+
+// ---------------------------------------------------------------------------
+// Phase 6 — Intelligence, Analytics & Automation
+// ---------------------------------------------------------------------------
+
+model GraphAnalysis {
+  id                String             @id @default(uuid())
+  organizationId    String
+  investigationId   String?
+  analysisType      GraphAnalysisType
+  status            GraphAnalysisStatus @default(QUEUED)
+  parameters        Json?
+  result            Json?
+  snapshotId        String?
+  startedAt         DateTime?
+  completedAt       DateTime?
+  createdById       String?
+  organization      Organization       @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  investigation     Investigation?    @relation(fields: [investigationId], references: [id], onDelete: SetNull)
+  createdBy         User?              @relation(fields: [createdById], references: [id])
+
+  @@index([organizationId, analysisType, createdAt])
+  @@index([investigationId])
+  @@index([status, createdAt])
+}
+
+model EntityMatchCandidate {
+  id                    String               @id @default(uuid())
+  organizationId        String
+  baseEntityId          String
+  matchEntityId         String
+  similarityScore       Float
+  matchFactors          Json // nameScore, attrScore, relScore, overallScore
+  status                EntityMatchStatus   @default(PENDING)
+  reviewedById          String?
+  mergedEntityId        String?
+  decisionComment       String?
+  createdAt             DateTime            @default(now())
+  reviewStartedAt       DateTime?
+  completedAt           DateTime?
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  reviewedBy   User?        @relation(fields: [reviewedById], references: [id])
+
+  @@unique([organizationId, baseEntityId, matchEntityId])
+  @@index([organizationId, status])
+  @@index([baseEntityId])
+  @@index([matchEntityId])
+}
+
+model Anomaly {
+  id                String              @id @default(uuid())
+  organizationId    String
+  investigationId   String?
+  anomalyType       AnomalyType
+  severity          AnomalySeverity
+  status            AnomalyStatus      @default(NEW)
+  baseline          Json
+  observedValue     Json
+  explanation       String?
+  score             Float?
+  sourceIds         String[]
+  context           Json?
+  reviewedById      String?
+  resolutionNotes   String?
+  createdAt         DateTime           @default(now())
+  resolvedAt        DateTime?
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  investigation Investigation? @relation(fields: [investigationId], references: [id], onDelete: SetNull)
+  reviewedBy  User?        @relation(fields: [reviewedById], references: [id])
+
+  @@index([organizationId, status, severity])
+  @@index([investigationId, severity])
+  @@index([status, createdAt])
+}
+
+model IntelligenceRule {
+  id               String    @id @default(uuid())
+  organizationId   String
+  name             String
+  description      String?
+  isActive         Boolean   @default(true)
+  conditions       Json
+  actions          Json
+  toolBudget       Int?
+  runCount         Int       @default(0)
+  lastTriggeredAt  DateTime?
+  createdById      String
+  organization     Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  createdBy        User        @relation(fields: [createdById], references: [id])
+
+  @@unique([organizationId, name])
+  @@index([organizationId, isActive])
+}
+
+model Alert {
+  id              String        @id @default(uuid())
+  organizationId  String
+  investigationId String?
+  ruleId          String?
+  severity        AlertSeverity
+  status          AlertStatus   @default(OPEN)
+  title           String
+  description     String?
+  entityId        String?
+  targetType      String?
+  targetId        String?
+  assignedToId    String?
+  sourceEvents    String[] // list of related event IDs
+  context         Json?
+  acknowledgedAt  DateTime?
+  resolvedAt      DateTime?
+  dismissedAt     DateTime?
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  investigation  Investigation? @relation(fields: [investigationId], references: [id], onDelete: SetNull)
+  assignedTo     User?        @relation(fields: [assignedToId], references: [id])
+
+  @@index([organizationId, status, severity, createdAt])
+  @@index([investigationId, status])
+  @@index([assignedToId, status])
+}
+
+model IntelligenceWorkflow {
+  id               String           @id @default(uuid())
+  organizationId   String
+  name             String
+  description      String?
+  kind             String
+  isActive         Boolean          @default(true)
+  steps            Json
+  isPublished      Boolean          @default(false)
+  createdById      String
+  organization     Organization     @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  createdBy        User             @relation(fields: [createdById], references: [id])
+  runs             WorkflowRun[]
+
+  @@unique([organizationId, name])
+  @@index([organizationId, isActive])
+}
+
+model WorkflowRun {
+  id            String            @id @default(uuid())
+  organizationId String
+  workflowId    String
+  status        WorkflowRunStatus @default(PENDING)
+  triggeredById  String
+  triggeredByType String
+  investigationId String?
+  context       Json
+  currentStepIndex Int @default(0)
+  runToken      String?
+  startedAt     DateTime?
+  completedAt   DateTime?
+  failedAt      DateTime?
+  errorMessage  String?
+  createdAt     DateTime          @default(now())
+  updatedAt     DateTime          @updatedAt
+
+  organization  Organization      @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  workflow      IntelligenceWorkflow @relation(fields: [workflowId], references: [id], onDelete: Cascade)
+  investigation Investigation?    @relation(fields: [investigationId], references: [ID], onDelete: SetNull)
+  approvals     WorkflowApproval[]
+
+  @@index([organizationId, status, createdAt])
+  @@index([workflowId, createdAt])
+}
+
+model WorkflowRunStep {
+  id            String              @id @default(uuid())
+  runId         String
+  stepIndex     Int
+  status        WorkflowStepStatus @default(PENDING)
+  input         Json?
+  output        Json?
+  errorMessage  String?
+  executedAt    DateTime?
+  createdAt     DateTime            @default(now())
+  updatedAt     DateTime            @updatedAt
+
+  run WorkflowRun @relation(fields: [runId], references: [id], onDelete: Cascade)
+
+  @@unique([runId, stepIndex])
+  @@index([runId])
+}
+
+model WorkflowApproval {
+  id        String       @id @default(uuid())
+  runId     String
+  stepIndex Int
+  status    ApprovalStatus @default(PENDING)
+  approverId String
+  comment   String?
+  expiresAt DateTime?
+  approvedAt DateTime?
+  createdAt DateTime     @default(now())
+
+  run      WorkflowRun @relation(fields: [runId], references: [id], onDelete: Cascade)
+  workflow IntelligenceWorkflow @relation(fields: [workflowId], references: [id])
+
+  @@unique([runId, stepIndex])
+  @@index([status, expiresAt])
+}
+
+model Watchlist {
+  id               String            @id @default(uuid())
+  organizationId   String
+  name             String
+  description      String?
+  sources          Json
+  isActive         Boolean           @default(true)
+  createdById      String
+  organization     Organization      @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  createdBy        User              @relation(fields: [createdById], references: [id])
+  items            WatchlistItem[]
+
+  @@unique([organizationId, name])
+  @@index([organizationId, isActive])
+}
+
+model WatchlistItem {
+  id          String       @id @default(uuid())
+  watchlistId String
+  targetType  String
+  targetId    String
+  metadata    Json?
+  expiresAt   DateTime?
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+
+  watchlist Watchlist @relation(fields: [watchlistId], references: [id], onDelete: Cascade)
+
+  @@unique([watchlistId, targetType, targetId])
+  @@index([watchlistId, targetType])
+}
+
+model DataSource {
+  id               String    @id @default(uuid())
+  organizationId   String
+  connectorType    String
+  name             String
+  config           Json
+  scheduleCron     String?
+  isActive         Boolean   @default(true)
+  createdById      String
+  organization     Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  createdBy        User        @relation(fields: [createdById], references: [id])
+
+  @@index([organizationId, isActive])
+}
+
+model ConnectorIngestion {
+  id               String            @id @default(uuid())
+  organizationId   String
+  dataSourceId     String
+  status           IngestionJobStatus @default(QUEUED)
+  recordsDiscovered Int              @default(0)
+  recordsProcessed Int               @default(0)
+  recordsFailed    Int               @default(0)
+  errors           Json
+  startedAt        DateTime?
+  completedAt      DateTime?
+  createdById      String?
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  records      IngestionRecord[]
+
+  @@index([organizationId, status, createdAt])
+  @@index([dataSourceId, createdAt])
+}
+
+model IngestionRecord {
+  id            String               @id @default(uuid())
+  ingestionId   String
+  status        IngestionRecordStatus @default(NEW)
+  externalId    String?
+  payload       Json
+  normalized    Json?
+  matchedEntityId String?
+  errorReason   String?
+  createdAt     DateTime             @default(now())
+
+  ingestion ConnectorIngestion @relation(fields: [ingestionId], references: [id], onDelete: Cascade)
+
+  @@index([ingestionId, status])
+  @@index([matchedEntityId])
+}
+
+model IntelligenceBriefing {
+  id               String           @id @default(uuid())
+  organizationId   String
+  investigationId  String?
+  title            String
+  summary          String?
+  status           BriefingStatus   @default(DRAFT)
+  content          Json?
+  citations        Json?
+  tokenUsage       Int?
+  generatedAt      DateTime?
+  createdById      String
+
+  organization  Organization      @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  investigation Investigation?   @relation(fields: [investigationId], references: [id], onDelete: SetNull)
+
+  @@index([organizationId, status, createdAt])
+  @@index([investigationId, createdAt])
+}
+
+model IntelligenceQuestion {
+  id               String                 @id @default(uuid())
+  organizationId   String
+  investigationId  String?
+  question         String
+  status           IntelligenceQuestionStatus @default(OPEN)
+  priority         InvestigationPriority   @default(MEDIUM)
+  createdById      String
+
+  organization  Organization      @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  investigation Investigation?   @relation(fields: [investigationId], references: [id], onDelete: SetNull)
+  findings      IntelligenceFinding[]
+
+  @@index([organizationId, status])
+  @@index([investigationId])
+}
+
+model IntelligenceFinding {
+  id               String           @id @default(uuid())
+  organizationId   String
+  investigationId  String?
+  questionId       String?
+  findingType      FindingType
+  status           FindingStatus    @default(DRAFT)
+  confidence       FindingConfidence @default(MEDIUM)
+  title            String
+  body             String
+  keyEntities      String[] // list of entity IDs
+  sources          Json
+  suggestedActions Json?
+  createdById      String
+
+  organization  Organization      @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  investigation Investigation?   @relation(fields: [investigationId], references: [id], onDelete: SetNull)
+  question      IntelligenceQuestion? @relation(fields: [questionId], references: [id], onDelete: SetNull)
+
+  @@index([organizationId, status])
+  @@index([investigationId])
+}
+
+model AnalyticsSnapshot {
+  id               String    @id @default(uuid())
+  organizationId   String
+  investigationId  String?
+  label            String
+  data             Json
+  createdAt        DateTime @default(now())
+
+  organization  Organization      @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  investigation Investigation?   @relation(fields: [investigationId], references: [id], onDelete: SetNull)
+
+  @@index([organizationId, investigationId, label, createdAt])
+}
+
+model AIOrchestrationSchedule {
+  id               String    @id @default(uuid())
+  organizationId   String
+  investigationId  String?
+  name             String
+  scheduleCron     String
+  prompt           String
+  tools           Json
+  isActive         Boolean   @default(true)
+  lastRunAt        DateTime?
+  nextRunAt        DateTime?
+  createdById      String
+
+  organization  Organization      @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  investigation Investigation?   @relation(fields: [investigationId], references: [id], onDelete: SetNull)
+
+  @@index([organizationId, isActive, nextRunAt])
+}

@@ -29,6 +29,12 @@ import { RateLimitGuard } from './rate-limit/rate-limit.guard';
 import { JobsModule } from './jobs/jobs.module';
 import { ReportsModule } from './reports/reports.module';
 import { CollaborationModule } from './collaboration/collaboration.module';
+import { IntelligenceAnalyticsModule } from './intelligence-analytics/intelligence-analytics.module';
+import { RulesModule } from './rules/rules.module';
+import { AlertsModule } from './alerts/alerts.module';
+import { WorkflowsModule } from './workflows/workflows.module';
+import { WatchlistsModule } from './watchlists/watchlists.module';
+import { ConnectorsModule } from './connectors/connectors.module';
 
 @Module({
   imports: [
@@ -57,6 +63,12 @@ import { CollaborationModule } from './collaboration/collaboration.module';
     AiModule,
     ReportsModule,
     CollaborationModule,
+    IntelligenceAnalyticsModule,
+    RulesModule,
+    AlertsModule,
+    WorkflowsModule,
+    WatchlistsModule,
+    ConnectorsModule,
   ],
   providers: [
     // Authentication first, then permission evaluation, then rate limiting.
