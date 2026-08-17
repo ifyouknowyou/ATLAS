@@ -53,6 +53,53 @@ export const PERMISSIONS = [
   'workspace.manage',
   'members.manage',
   'settings.manage',
+
+  // Phase 6 — Intelligence & Automation
+  'analytics.read',
+  'analytics.create',
+  'analytics.delete',
+
+  'rule.read',
+  'rule.create',
+  'rule.update',
+  'rule.delete',
+  'rule.execute',
+
+  'alert.read',
+  'alert.update',
+  'alert.dismiss',
+  'alert.assign',
+
+  'workflow.read',
+  'workflow.create',
+  'workflow.update',
+  'workflow.delete',
+  'workflow.execute',
+  'workflow.approve',
+
+  'watchlist.read',
+  'watchlist.create',
+  'watchlist.update',
+  'watchlist.delete',
+
+  'connector.read',
+  'connector.create',
+  'connector.update',
+  'connector.delete',
+  'connector.sync',
+
+  'finding.read',
+  'finding.create',
+  'finding.update',
+  'finding.delete',
+  'finding.confirm',
+
+  'briefing.read',
+  'briefing.create',
+  'briefing.update',
+  'briefing.delete',
+
+  'intelligence.search',
 ] as const;
 export type Permission = (typeof PERMISSIONS)[number];
 

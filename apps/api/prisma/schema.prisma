@@ -218,6 +218,249 @@ enum ReportReviewDecision {
 }
 
 // ---------------------------------------------------------------------------
+// Phase 6 — Intelligence & Automation Enums
+// ---------------------------------------------------------------------------
+
+enum GraphAnalysisType {
+  CENTRALITY
+  COMMUNITY
+  PATH
+  CLUSTERING
+  CHANGE_DETECTION
+  TEMPORAL
+  GEOSPATIAL
+}
+
+enum GraphAnalysisStatus {
+  QUEUED
+  RUNNING
+  COMPLETED
+  FAILED
+}
+
+enum EntityMatchStatus {
+  PENDING
+  CONFIRMED_MERGE
+  REJECTED
+  IGNORED
+}
+
+enum AnomalyType {
+  TEMPORAL_SPIKE
+  TEMPORAL_DROP
+  RELATIONSHIP_DENSITY
+  DEGREE_ANOMALY
+  CLUSTERING_COEFFICIENT
+  PATTERN_DEVIATION
+  GEOSPATIAL_OUTLIER
+  ATTRIBUTE_DRIFT
+}
+
+enum AnomalySeverity {
+  LOW
+  MEDIUM
+  HIGH
+  CRITICAL
+}
+
+enum AnomalyStatus {
+  NEW
+  UNDER_REVIEW
+  CONFIRMED
+  FALSE_POSITIVE
+  RESOLVED
+}
+
+enum RuleConditionType {
+  ENTITY_COUNT
+  RELATIONSHIP_COUNT
+  ANOMALY_DETECTED
+  EVIDENCE_UPLOADED
+  ENTITY_CREATED
+  RELATIONSHIP_CREATED
+  TIME_WINDOW
+  CLASSIFICATION_CHANGE
+  CONFIDENCE_THRESHOLD
+  GEOSPATIAL_PROXIMITY
+  TAG_MATCH
+  CUSTOM_QUERY
+}
+
+enum RuleOperator {
+  EQUALS
+  NOT_EQUALS
+  GREATER_THAN
+  GREATER_THAN_OR_EQUAL
+  LESS_THAN
+  LESS_THAN_OR_EQUAL
+  CONTAINS
+  NOT_CONTAINS
+  IN
+  NOT_IN
+  REGEX_MATCH
+  EXISTS
+  NOT_EXISTS
+}
+
+enum RuleActionType {
+  CREATE_ALERT
+  SEND_NOTIFICATION
+  CREATE_TASK
+  ADD_TO_WATCHLIST
+  TRIGGER_WORKFLOW
+  RUN_ANALYSIS
+  UPDATE_CLASSIFICATION
+  TAG_ENTITY
+  WEBHOOK
+  CUSTOM
+}
+
+enum AlertSeverity {
+  INFO
+  LOW
+  MEDIUM
+  HIGH
+  CRITICAL
+}
+
+enum AlertStatus {
+  OPEN
+  ACKNOWLEDGED
+  INVESTIGATING
+  RESOLVED
+  DISMISSED
+}
+
+enum WorkflowStatus {
+  DRAFT
+  ACTIVE
+  PAUSED
+  ARCHIVED
+}
+
+enum WorkflowRunStatus {
+  PENDING
+  RUNNING
+  WAITING_APPROVAL
+  COMPLETED
+  FAILED
+  CANCELLED
+}
+
+enum WorkflowStepType {
+  CONDITION
+  ACTION
+  APPROVAL
+  DELAY
+  PARALLEL
+  HUMAN_TASK
+  AI_ANALYSIS
+  CONNECTOR_SYNC
+}
+
+enum WorkflowStepStatus {
+  PENDING
+  RUNNING
+  COMPLETED
+  FAILED
+  SKIPPED
+  WAITING_APPROVAL
+}
+
+enum ApprovalStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  EXPIRED
+}
+
+enum ConnectorType {
+  RSS
+  API
+  DATABASE
+  FILE_SYSTEM
+  EMAIL
+  WEBHOOK
+  THREAT_FEED
+  SOCIAL_MEDIA
+  CUSTOM
+}
+
+enum IngestionJobStatus {
+  QUEUED
+  RUNNING
+  COMPLETED
+  FAILED
+  PARTIAL
+}
+
+enum IngestionRecordStatus {
+  NEW
+  PROCESSED
+  MATCHED
+  CREATED
+  UPDATED
+  SKIPPED
+  ERROR
+}
+
+enum WatchlistTrigger {
+  ON_CREATE
+  ON_UPDATE
+  ON_DELETE
+  ON_CLASSIFICATION_CHANGE
+  ON_CONFIDENCE_CHANGE
+  ON_RELATIONSHIP_CHANGE
+  ON_EVIDENCE_ADDED
+  ON_ANOMALY
+  SCHEDULED
+}
+
+enum FindingType {
+  PATTERN
+  CORRELATION
+  ANOMALY
+  PREDICTION
+  ATTRIBUTION
+  THREAT_ACTOR
+  CAMPAIGN
+  INFRASTRUCTURE
+  PERSON_OF_INTEREST
+  RELATIONSHIP_GAP
+}
+
+enum FindingStatus {
+  DRAFT
+  PROPOSED
+  CONFIRMED
+  REJECTED
+  ARCHIVED
+}
+
+enum FindingConfidence {
+  LOW
+  MEDIUM
+  HIGH
+  VERY_HIGH
+}
+
+enum BriefingStatus {
+  DRAFT
+  GENERATED
+  REVIEWED
+  APPROVED
+  PUBLISHED
+}
+
+enum IntelligenceQuestionStatus {
+  OPEN
+  IN_PROGRESS
+  ANSWERED
+  DEFERRED
+  CLOSED
+}
+
+// ---------------------------------------------------------------------------
 // Identity & tenancy
 // ---------------------------------------------------------------------------
 
