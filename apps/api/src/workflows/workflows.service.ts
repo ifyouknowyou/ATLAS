@@ -1,7 +1,6 @@
 import { Injectable, NotFoundException, ForbiddenException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { AuthenticatedPrincipal } from '../auth/principal';
-import { JsonNull, InputJsonValue } from '@prisma/client/runtime/library';
 import { JobQueueService } from '../jobs/job-queue.service';
 
 @Injectable()
@@ -21,7 +20,7 @@ export class WorkflowsService {
         name: dto.name,
         description: dto.description,
         kind: dto.kind,
-        steps: dto.steps as InputJsonValue,
+        steps: JSON.parse(JSON.stringify(dto.steps)),
         createdById: this.principal.userId,
       },
     });
@@ -42,7 +41,7 @@ export class WorkflowsService {
         status: 'RUNNING',
         triggeredById: this.principal.userId,
         triggeredByType: 'USER',
-        context: context as InputJsonValue,
+        context: typeof context === 'string' ? context : JSON.stringify(context),
         currentStepIndex: 0,
         runToken: `${workflow.id}-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`,
       },
@@ -50,10 +49,10 @@ export class WorkflowsService {
 
     const steps = workflow.steps as Array<{ type: string }>;
     if (steps.length) {
-      await this.jobs.enqueue('workflow-run', {
+      await this.jobs.enqueue({
+        kind: 'ORCHESTRATION_TASK',
+        payload: { runId: run.id, stepIndex: 0 },
         organizationId: this.principal.organizationId,
-        runId: run.id,
-        stepIndex: 0,
       });
     }
 
@@ -91,7 +90,11 @@ export class WorkflowsService {
       },
     });
     await this.prisma.workflowRun.update({ where: { id: runId }, data: { status: 'RUNNING' } });
-    await this.jobs.enqueue('workflow-run', { organizationId: run.organizationId, runId, stepIndex: run.currentStepIndex + 1 });
+    await this.jobs.enqueue({
+      kind: 'ORCHESTRATION_TASK',
+      payload: { runId, stepIndex: run.currentStepIndex + 1 },
+      organizationId: run.organizationId,
+    });
     return this.getRun(runId);
   }
 
@@ -109,6 +112,7 @@ export class WorkflowsService {
         comment,
       },
     });
-    return this.prisma.workflowRun.update({ where: { id: runId }, data: { status: 'FAILED', errorMessage: comment } });
+    await this.prisma.workflowRun.update({ where: { id: runId }, data: { status: 'FAILED' } });
+    return this.getRun(runId);
   }
 }

@@ -102,47 +102,47 @@ DROP INDEX "ix_anomaly_inv";
 DROP INDEX "ux_question_run";
 
 -- AlterTable
-ALTER TABLE "Alert" RENAME CONSTRAINT "pk_alert" TO "Alert_pkey",
-ALTER COLUMN "acknowledgedAt" SET DATA TYPE TIMESTAMP(3),
-ALTER COLUMN "resolvedAt" SET DATA TYPE TIMESTAMP(3),
-ALTER COLUMN "dismissedAt" SET DATA TYPE TIMESTAMP(3),
-ALTER COLUMN "createdAt" SET DATA TYPE TIMESTAMP(3),
-ALTER COLUMN "updatedAt" DROP DEFAULT,
-ALTER COLUMN "updatedAt" SET DATA TYPE TIMESTAMP(3);
+ALTER TABLE "Alert" RENAME CONSTRAINT "pk_alert" TO "Alert_pkey";
+ALTER TABLE "Alert" ALTER COLUMN "acknowledgedAt" SET DATA TYPE TIMESTAMP(3);
+ALTER TABLE "Alert" ALTER COLUMN "resolvedAt" SET DATA TYPE TIMESTAMP(3);
+ALTER TABLE "Alert" ALTER COLUMN "dismissedAt" SET DATA TYPE TIMESTAMP(3);
+ALTER TABLE "Alert" ALTER COLUMN "createdAt" SET DATA TYPE TIMESTAMP(3);
+ALTER TABLE "Alert" ALTER COLUMN "updatedAt" DROP DEFAULT;
+ALTER TABLE "Alert" ALTER COLUMN "updatedAt" SET DATA TYPE TIMESTAMP(3);
 
 -- AlterTable
-ALTER TABLE "AnalyticsSnapshot" RENAME CONSTRAINT "pk_analyticssnapshot" TO "AnalyticsSnapshot_pkey",
-ALTER COLUMN "createdAt" SET DATA TYPE TIMESTAMP(3);
+ALTER TABLE "AnalyticsSnapshot" RENAME CONSTRAINT "pk_analyticssnapshot" TO "AnalyticsSnapshot_pkey";
+ALTER TABLE "AnalyticsSnapshot" ALTER COLUMN "createdAt" SET DATA TYPE TIMESTAMP(3);
 
 -- AlterTable
-ALTER TABLE "Anomaly" RENAME CONSTRAINT "pk_anomaly" TO "Anomaly_pkey",
-ADD COLUMN     "reviewedAt" TIMESTAMP(3),
-ALTER COLUMN "createdAt" SET DATA TYPE TIMESTAMP(3),
-ALTER COLUMN "resolvedAt" SET DATA TYPE TIMESTAMP(3);
+ALTER TABLE "Anomaly" RENAME CONSTRAINT "pk_anomaly" TO "Anomaly_pkey";
+ALTER TABLE "Anomaly" ADD COLUMN     "reviewedAt" TIMESTAMP(3);
+ALTER TABLE "Anomaly" ALTER COLUMN "createdAt" SET DATA TYPE TIMESTAMP(3);
+ALTER TABLE "Anomaly" ALTER COLUMN "resolvedAt" SET DATA TYPE TIMESTAMP(3);
 
 -- AlterTable
-ALTER TABLE "ConnectorIngestion" RENAME CONSTRAINT "pk_connectoringestion" TO "ConnectorIngestion_pkey",
-DROP COLUMN "updatedAt",
-ALTER COLUMN "errors" SET NOT NULL,
-ALTER COLUMN "startedAt" SET DATA TYPE TIMESTAMP(3),
-ALTER COLUMN "completedAt" SET DATA TYPE TIMESTAMP(3),
-ALTER COLUMN "createdAt" SET DATA TYPE TIMESTAMP(3);
+ALTER TABLE "ConnectorIngestion" RENAME CONSTRAINT "pk_connectoringestion" TO "ConnectorIngestion_pkey";
+ALTER TABLE "ConnectorIngestion" DROP COLUMN "updatedAt";
+ALTER TABLE "ConnectorIngestion" ALTER COLUMN "errors" SET NOT NULL;
+ALTER TABLE "ConnectorIngestion" ALTER COLUMN "startedAt" SET DATA TYPE TIMESTAMP(3);
+ALTER TABLE "ConnectorIngestion" ALTER COLUMN "completedAt" SET DATA TYPE TIMESTAMP(3);
+ALTER TABLE "ConnectorIngestion" ALTER COLUMN "createdAt" SET DATA TYPE TIMESTAMP(3);
 
 -- AlterTable
-ALTER TABLE "DataSource" RENAME CONSTRAINT "pk_datasource" TO "DataSource_pkey",
-DROP COLUMN "connectorType",
-ADD COLUMN     "connectorType" TEXT NOT NULL,
-ALTER COLUMN "createdAt" SET DATA TYPE TIMESTAMP(3),
-ALTER COLUMN "updatedAt" DROP DEFAULT,
-ALTER COLUMN "updatedAt" SET DATA TYPE TIMESTAMP(3);
+ALTER TABLE "DataSource" RENAME CONSTRAINT "pk_datasource" TO "DataSource_pkey";
+ALTER TABLE "DataSource" DROP COLUMN "connectorType";
+ALTER TABLE "DataSource" ADD COLUMN     "connectorType" TEXT NOT NULL;
+ALTER TABLE "DataSource" ALTER COLUMN "createdAt" SET DATA TYPE TIMESTAMP(3);
+ALTER TABLE "DataSource" ALTER COLUMN "updatedAt" DROP DEFAULT;
+ALTER TABLE "DataSource" ALTER COLUMN "updatedAt" SET DATA TYPE TIMESTAMP(3);
 
 -- AlterTable
-ALTER TABLE "DistributedLock" DROP CONSTRAINT "DistributedLock_pkey",
-ADD COLUMN     "id" TEXT NOT NULL,
-ADD COLUMN     "updatedAt" TIMESTAMP(3) NOT NULL,
-ALTER COLUMN "expiresAt" SET DATA TYPE TIMESTAMP(3),
-ALTER COLUMN "createdAt" SET DATA TYPE TIMESTAMP(3),
-ADD CONSTRAINT "DistributedLock_pkey" PRIMARY KEY ("id");
+ALTER TABLE "DistributedLock" DROP CONSTRAINT "DistributedLock_pkey";
+ALTER TABLE "DistributedLock" ADD COLUMN     "id" TEXT NOT NULL;
+ALTER TABLE "DistributedLock" ADD COLUMN     "updatedAt" TIMESTAMP(3) NOT NULL;
+ALTER TABLE "DistributedLock" ALTER COLUMN "expiresAt" SET DATA TYPE TIMESTAMP(3);
+ALTER TABLE "DistributedLock" ALTER COLUMN "createdAt" SET DATA TYPE TIMESTAMP(3);
+ALTER TABLE "DistributedLock" ADD CONSTRAINT "DistributedLock_pkey" PRIMARY KEY ("id");
 
 -- AlterTable
 ALTER TABLE "EntityMatchCandidate" RENAME CONSTRAINT "pk_entitymatch" TO "EntityMatchCandidate_pkey",

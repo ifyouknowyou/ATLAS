@@ -20,8 +20,8 @@ export class WorkflowsController {
 
   @Post()
   @RequirePermission('workflow.create')
-  create(@Body() dto: { name: string; description?: string; kind: string; steps: unknown }) {
-    return this.service.create(dto);
+  create(@Body('name') name: string, @Body('description') description: string | undefined, @Body('kind') kind: string, @Body('steps') steps: unknown) {
+    return this.service.create({ name, description, kind, steps } as { name: string; description?: string; kind: string; steps: Record<string, unknown> });
   }
 
   @Post(':id/trigger')

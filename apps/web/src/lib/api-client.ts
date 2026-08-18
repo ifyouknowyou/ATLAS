@@ -4,7 +4,7 @@ import {
   type ApiErrorCode,
 } from '@atlas/shared';
 
-const API_PREFIX = '/api';
+const API_BASE = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:4100/api';
 
 /**
  * Client-side API wrapper. Attaches the bearer token from auth storage and
@@ -32,7 +32,7 @@ export async function apiRequest<T>(
   path: string,
   { body, token, headers, ...init }: RequestOptions = {},
 ): Promise<T> {
-  const response = await fetch(`${API_PREFIX}${path}`, {
+  const response = await fetch(`${API_BASE}${path}`, {
     ...init,
     headers: {
       ...(body !== undefined ? { 'content-type': 'application/json' } : {}),

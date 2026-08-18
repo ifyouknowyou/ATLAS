@@ -1,4 +1,4 @@
-import { Injectable, ForbiddenException } from '@nestjs/common';
+import { Injectable, ForbiddenException, Optional } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import * as crypto from 'crypto';
 import { AuthenticatedPrincipal } from '../auth/principal';
@@ -7,7 +7,7 @@ import { AuthenticatedPrincipal } from '../auth/principal';
 export class SecurityService {
   constructor(
     private readonly config: ConfigService,
-    private readonly principal: AuthenticatedPrincipal,
+    @Optional() private readonly principal: AuthenticatedPrincipal,
   ) {}
 
   // Input validation and sanitization
