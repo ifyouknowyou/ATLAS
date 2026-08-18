@@ -1,14 +1,10 @@
-import { Injectable, ForbiddenException, Optional } from '@nestjs/common';
+import { Injectable, ForbiddenException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import * as crypto from 'crypto';
-import { AuthenticatedPrincipal } from '../auth/principal';
 
 @Injectable()
 export class SecurityService {
-  constructor(
-    private readonly config: ConfigService,
-    @Optional() private readonly principal: AuthenticatedPrincipal,
-  ) {}
+  constructor(private readonly config: ConfigService) {}
 
   // Input validation and sanitization
   sanitizeText(text: string): string {
@@ -83,9 +79,7 @@ export class SecurityService {
 
   // Rate limiting helpers
   getRateLimitKey(type: string, id?: string): string {
-    const orgId = this.principal.organizationId ?? 'global';
-    const userId = this.principal.userId ?? 'anonymous';
-    return `${type}:${orgId}:${userId}:${id ?? ''}`;
+    return `${type}:global:anonymous:${id ?? ''}`;
   }
 
   // Password hashing (if needed)
