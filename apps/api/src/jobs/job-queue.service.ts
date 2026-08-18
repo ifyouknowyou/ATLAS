@@ -11,7 +11,10 @@ export type BackgroundJobKind =
   | 'EVIDENCE_EMBEDDING'
   | 'REPORT_GENERATION'
   | 'PDF_GENERATION'
-  | 'NOTIFICATION_DISPATCH';
+  | 'NOTIFICATION_DISPATCH'
+  | 'CONNECTOR_SYNC'
+  | 'ANOMALY_DETECTION'
+  | 'GRAPH_ANALYSIS';
 
 export interface EnqueueJobInput {
   kind: BackgroundJobKind;

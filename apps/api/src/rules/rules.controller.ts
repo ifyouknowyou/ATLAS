@@ -4,6 +4,7 @@ import { RequirePermission } from '../rbac/require-permission.decorator';
 import { PermissionsGuard } from '../rbac/permissions.guard';
 import { AuthGuard } from '../auth/auth.guard';
 import { RulesService } from './rules.service';
+import { InputJsonValue } from '@prisma/client/runtime/library';
 
 @ApiTags('rules')
 @Controller('rules')
@@ -20,7 +21,7 @@ export class RulesController {
 
   @Post()
   @RequirePermission('rule.create')
-  create(@Body() dto: { name: string; description?: string; conditions: unknown; actions: unknown }) {
+  create(@Body() dto: { name: string; description?: string; conditions: InputJsonValue; actions: InputJsonValue }) {
     return this.service.create(dto);
   }
 

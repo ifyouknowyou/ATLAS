@@ -1,7 +1,7 @@
 import { Injectable, NotFoundException, ForbiddenException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { AuthenticatedPrincipal } from '../auth/principal';
-import { JobsService } from '../jobs/jobs.service';
+import { InputJsonValue } from '@prisma/client/runtime/library';
 
 @Injectable()
 export class WorkflowsService {

@@ -1,6 +1,7 @@
 import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { AuthenticatedPrincipal } from '../auth/principal';
+import { InputJsonValue } from '@prisma/client/runtime/library';
 
 @Injectable()
 export class RulesService {
@@ -15,7 +16,7 @@ export class RulesService {
     });
   }
 
-  async create(dto: { name: string; description?: string; conditions: unknown; actions: unknown }) {
+  async create(dto: { name: string; description?: string; conditions: InputJsonValue; actions: InputJsonValue }) {
     return this.prisma.intelligenceRule.create({
       data: {
         organizationId: this.principal.organizationId,

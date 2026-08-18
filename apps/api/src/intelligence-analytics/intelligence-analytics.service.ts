@@ -4,7 +4,8 @@ import { AuthenticatedPrincipal } from '../auth/principal';
 import { GraphAnalyticsService } from './graph-analytics.service';
 import { AnomalyDetectionService } from './anomaly-detection.service';
 import { EntityResolutionService } from './entity-resolution.service';
-import { JobsService } from '../jobs/jobs.service';
+import { JobQueueService } from '../jobs/job-queue.service';
+import { JsonValue } from '@prisma/client/runtime/library';
 
 export interface TriggerAnalysisDto {
   investigationId?: string;
@@ -16,7 +17,7 @@ export interface TriggerAnalysisDto {
     | 'CHANGE_DETECTION'
     | 'TEMPORAL'
     | 'GEOSPATIAL';
-  params?: Record<string, unknown>;
+  params?: any;
 }
 
 @Injectable()
@@ -27,7 +28,7 @@ export class IntelligenceAnalyticsService {
     private readonly graph: GraphAnalyticsService,
     private readonly anomaly: AnomalyDetectionService,
     private readonly resolution: EntityResolutionService,
-    private readonly jobs: JobsService,
+    private readonly jobQueueService: JobQueueService,
   ) {}
 
   listAnalyses(investigationId?: string) {
@@ -49,17 +50,16 @@ export class IntelligenceAnalyticsService {
         organizationId: orgId,
         investigationId: dto.investigationId,
         analysisType: dto.analysisType,
-        parameters: dto.params ?? {},
+        parameters: dto.params ?? {} as JsonValue,
         status: 'QUEUED',
       },
     });
 
-    await this.jobs.enqueue('graph-analysis', {
-      analysisId: analysis.id,
+    await this.jobQueueService.enqueue({
+      kind: 'GRAPH_ANALYSIS',
+      payload: { analysisId: analysis.id, organizationId: orgId, investigationId: dto.investigationId, analysisType: dto.analysisType, params: dto.params },
       organizationId: orgId,
       investigationId: dto.investigationId,
-      analysisType: dto.analysisType,
-      params: dto.params,
     });
 
     return analysis;

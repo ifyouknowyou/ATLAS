@@ -8,7 +8,7 @@ export class RequestDurationInterceptor implements NestInterceptor {
   constructor(private readonly logger: StructuredLoggerService) {}
 
   intercept(context: ExecutionContext, next: CallHandler): Observable<any> {
-    const request = context.switchToHttp().getRequest<Request & { requestId?: string; organizationId?: string; userId?: string }>();
+    const request = context.switchToHttp().getRequest<any>();
     const start = Date.now();
     return next.handle().pipe(
       tap({
@@ -19,7 +19,7 @@ export class RequestDurationInterceptor implements NestInterceptor {
             organizationId: request.organizationId,
             userId: request.userId,
             method: request.method,
-            path: request.route?.path ?? request.path,
+            path: request.url,
             durationMs: duration,
           });
         },

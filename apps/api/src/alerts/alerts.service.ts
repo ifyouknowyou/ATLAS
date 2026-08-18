@@ -68,7 +68,13 @@ export class AlertsService {
     }
     return this.prisma.alert.update({
       where: { id },
-      data: { status: 'DISMISSED', dismissedAt: new Date(), context: { ...(alert.context ?? {}), dismissReason: reason } as any },
+      data: {
+        status: 'DISMISSED',
+        dismissedAt: new Date(),
+        context: typeof alert.context === 'object' && alert.context !== null
+          ? { ...alert.context, dismissReason: reason }
+          : { dismissReason: reason }
+      },
     });
   }
 }

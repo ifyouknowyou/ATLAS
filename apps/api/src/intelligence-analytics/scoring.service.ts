@@ -23,20 +23,20 @@ export class IntelligenceScoringService {
   async score(entityId: string) {
     const entity = await this.prisma.entity.findFirst({
       where: { id: entityId, organizationId: this.principal.organizationId },
-      include: { links: true, relationships: true },
+      include: { outgoingRelationships: true, incomingRelationships: true },
     });
     if (!entity) {
       throw new NotFoundException('Entity not found');
     }
 
     const analyticalConfidence = entity.confidence;
-    const inLinks = (entity.links ?? []).length;
-    const outLinks = (entity.relationships ?? []).length;
-    const fragmentation = this.measureFragmentation(entity);
+    const inLinks = (entity.incomingRelationships ?? []).length;
+    const outLinks = (entity.outgoingRelationships ?? []).length;
+    const fragmentation = this.measureFragmentation(entity.incomingRelationships ?? []);
 
     const dimensions = {
       analytical_confidence: analyticalConfidence,
-      investigation_activity: Math.min(1, (entity.links?.length ?? 0) / 10),
+      investigation_activity: Math.min(1, (entity.incomingRelationships?.length ?? 0) / 10),
       goodness_of_fit: 0.5,
       link_power: Math.min(1, (inLinks + outLinks) / 20),
       fragmentation,
@@ -55,8 +55,8 @@ export class IntelligenceScoringService {
     return { entityId, dimensions, overall } satisfies IntelligenceScore;
   }
 
-  private measureFragmentation(entity: { links?: { investigationId: string }[] }): number {
-    const investigations = new Set((entity.links ?? []).map((link) => link.investigationId));
+  private measureFragmentation(incomingRelationships: { investigationId: string | null }[]): number {
+    const investigations = new Set(incomingRelationships.map((link) => link.investigationId).filter((id): id is string => id !== null));
     return investigations.size <= 1 ? 0.2 : 0.7;
   }
 }

@@ -76,8 +76,8 @@ export class GraphAnalyticsService {
         ...(investigationId ? { investigationId } : {}),
       },
       include: {
-        sourceEntity: { select: { id: true, name: true } },
-        targetEntity: { select: { id: true, name: true } },
+        source: { select: { id: true, name: true } },
+        target: { select: { id: true, name: true } },
       },
     });
 
@@ -271,7 +271,7 @@ export class GraphAnalyticsService {
     return sampled;
   }
 
-  private async detectChange(orgId: string, investigationId: string | undefined, edges: Array<{ id: string; sourceId: string; targetId: string; kind: string }>) {
+  private async detectChange(orgId: string, investigationId: string | undefined | null, edges: Array<{ id: string; sourceId: string; targetId: string; kind: string }>) {
     const snapshots = await this.prisma.graphAnalysis.findMany({
       where: { organizationId: orgId, investigationId, analysisType: 'CHANGE_DETECTION', status: 'COMPLETED' },
       orderBy: { createdAt: 'desc' },

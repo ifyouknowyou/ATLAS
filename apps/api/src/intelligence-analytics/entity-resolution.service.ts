@@ -32,7 +32,7 @@ export class EntityResolutionService {
         type: true,
         status: true,
         tags: true,
-        attributes: true,
+        properties: true,
       },
     });
 
@@ -76,7 +76,7 @@ export class EntityResolutionService {
       data: {
         status,
         reviewedById: this.principal.userId,
-        reviewedAt: new Date(),
+        completedAt: new Date(),
       },
     });
   }

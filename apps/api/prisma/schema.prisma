@@ -1446,6 +1446,7 @@ model Anomaly {
   sourceIds       String[]
   context         Json?
   reviewedById    String?
+  reviewedAt      DateTime?
   resolutionNotes String?
   createdAt       DateTime        @default(now())
   resolvedAt      DateTime?
@@ -1789,4 +1790,16 @@ model AIOrchestrationSchedule {
   investigation Investigation? @relation(fields: [investigationId], references: [id], onDelete: SetNull)
 
   @@index([organizationId, isActive, nextRunAt])
+}
+
+model DistributedLock {
+  id         String   @id @default(uuid())
+  key        String   @unique
+  owner      String
+  expiresAt  DateTime
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@index([key])
+  @@index([expiresAt])
 }

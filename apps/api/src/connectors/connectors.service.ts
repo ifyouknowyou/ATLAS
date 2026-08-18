@@ -1,11 +1,12 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { AuthenticatedPrincipal } from '../auth/principal';
-import { JobsService } from '../jobs/jobs.service';
+import { JobQueueService, BackgroundJobKind } from '../jobs/job-queue.service';
+import { Prisma } from '@prisma/client';
 
 @Injectable()
 export class ConnectorsService {
-  constructor(private readonly prisma: PrismaService, private readonly principal: AuthenticatedPrincipal, private readonly jobs: JobsService) {}
+  constructor(private readonly prisma: PrismaService, private readonly principal: AuthenticatedPrincipal, private readonly jobQueueService: JobQueueService) {}
 
   sources(organizationId?: string) {
     return this.prisma.dataSource.findMany({
@@ -20,7 +21,7 @@ export class ConnectorsService {
         organizationId: this.principal.organizationId,
         name: dto.name,
         connectorType: dto.connectorType,
-        config: dto.config,
+        config: dto.config as Prisma.InputJsonValue,
         scheduleCron: dto.scheduleCron,
         createdById: this.principal.userId,
       },
@@ -35,8 +36,9 @@ export class ConnectorsService {
       throw new NotFoundException('Data source not found');
     }
 
-    const job = await this.jobs.enqueue('connector-sync', {
-      dataSourceId: dataSource.id,
+    const job = await this.jobQueueService.enqueue({
+      kind: 'CONNECTOR_SYNC',
+      payload: { dataSourceId: dataSource.id },
       organizationId: this.principal.organizationId,
     });
     return job;
