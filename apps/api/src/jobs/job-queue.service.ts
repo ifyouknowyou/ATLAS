@@ -14,7 +14,8 @@ export type BackgroundJobKind =
   | 'NOTIFICATION_DISPATCH'
   | 'CONNECTOR_SYNC'
   | 'ANOMALY_DETECTION'
-  | 'GRAPH_ANALYSIS';
+  | 'GRAPH_ANALYSIS'
+  | 'ORCHESTRATION_TASK';
 
 export interface EnqueueJobInput {
   kind: BackgroundJobKind;

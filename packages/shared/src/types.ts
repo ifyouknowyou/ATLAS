@@ -100,6 +100,8 @@ export const PERMISSIONS = [
   'briefing.delete',
 
   'intelligence.search',
+  'intelligence.orchestrate',
+  'intelligence.orchestration.read',
 ] as const;
 export type Permission = (typeof PERMISSIONS)[number];
 
