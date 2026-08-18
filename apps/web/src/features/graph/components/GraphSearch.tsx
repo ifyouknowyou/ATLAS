@@ -30,7 +30,7 @@ export function GraphSearch({ onFocusNode }: GraphSearchProps) {
           value={query}
           onChange={(e) => setQuery(e.target.value)}
           placeholder="Search entities..."
-          className="tech-input h-7 w-full bg-transparent text-[12px] text-void placeholder:text-slate-tech focus:outline-none"
+          className="tech-input h-7 w-full bg-transparent text-[12px] text-slate-100 placeholder:text-slate-tech focus:outline-none"
           aria-label="Search entities in graph"
         />
       </div>
@@ -43,7 +43,7 @@ export function GraphSearch({ onFocusNode }: GraphSearchProps) {
                   onFocusNode?.(n.id);
                   setQuery('');
                 }}
-                className="flex w-full items-center justify-between gap-2 px-2 py-1.5 text-left font-mono text-[11px] text-void hover:text-phosphor"
+                className="flex w-full items-center justify-between gap-2 px-2 py-1.5 text-left font-mono text-[11px] text-slate-100 hover:text-phosphor"
               >
                 <span>{n.name}</span>
                 <span className="text-slate-tech">{n.type}</span>

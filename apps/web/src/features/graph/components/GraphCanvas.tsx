@@ -37,6 +37,11 @@ export function GraphCanvas({ height = 'h-[520px]', onSelectNode, onNeighborhood
     const canvas = canvasRef.current;
     const ctx = canvas?.getContext('2d');
     if (!canvas || !ctx) return;
+    const currentState = useGraphStore.getState();
+    const currentData = currentState.data;
+    const currentViewport = currentState.viewport;
+    const currentSelectedIds = currentState.selectedNodeIds;
+    const currentHoveredId = currentState.hoveredId;
     const dpr = window.devicePixelRatio || 1;
     const rect = canvas.getBoundingClientRect();
     if (canvas.width !== rect.width * dpr || canvas.height !== rect.height * dpr) {
@@ -45,9 +50,9 @@ export function GraphCanvas({ height = 'h-[520px]', onSelectNode, onNeighborhood
     }
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
     const renderer = rendererRef.current ?? (rendererRef.current = new GraphRenderer());
-    renderer.draw(ctx, data, viewport, {
-      selectedIds: new Set(selectedIds),
-      hoveredId,
+    renderer.draw(ctx, currentData, currentViewport, {
+      selectedIds: new Set(currentSelectedIds),
+      hoveredId: currentHoveredId,
       maxNodes: 1000,
     });
   };

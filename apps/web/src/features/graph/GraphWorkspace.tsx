@@ -1,5 +1,5 @@
 'use client';
-import { useMemo } from 'react';
+import { useEffect, useMemo } from 'react';
 import { useGraphBrowse } from '@/lib/queries';
 import { useGraphStore } from './store';
 import type { GraphNode, GraphEdge } from './types';
@@ -40,10 +40,11 @@ export function GraphWorkspace() {
     return { nodes, edges };
   }, [data]);
 
-  // Seed the engine store once data arrives so non-canvas panels share it.
-  useMemo(() => {
-    if (graph && graph.nodes.length > 0) {
-      useGraphStore.setState({ data: graph });
+  // Hydrate shared graph state after the query resolves so search and panels
+  // always observe the same dataset, including after a fresh navigation.
+  useEffect(() => {
+    if (graph) {
+      useGraphStore.getState().setData(graph);
     }
   }, [graph]);
 

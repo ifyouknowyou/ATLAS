@@ -26,9 +26,8 @@ export function GraphViewport({ data, height, onSelectNode }: GraphViewportProps
   const setSimRunning = useGraphStore((s) => s.setSimRunning);
   const hostRef = useRef<SimulationHost | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
+  const hostDataSignatureRef = useRef('');
   const [hostMode, setHostMode] = useState<'worker' | 'main'>('worker');
-  const dataRef = useRef(storeData);
-  dataRef.current = storeData;
 
   // Seed the store when the prop dataset arrives (e.g. investigation tab).
   useEffect(() => {
@@ -69,9 +68,17 @@ export function GraphViewport({ data, height, onSelectNode }: GraphViewportProps
     setViewport(viewportForBounds(bounds, rect.width, rect.height));
   };
 
-  // Push data changes to the host (debounced by rAF-driven worker messages).
+  // Push structural data changes to the host. Position updates from the host
+  // itself must not restart the simulation on every frame.
   useEffect(() => {
-    hostRef.current?.setData(dataRef.current);
+    const signature = [
+      ...storeData.nodes.map((node) => node.id),
+      '|',
+      ...storeData.edges.map((edge) => `${edge.id}:${edge.sourceId}:${edge.targetId}`),
+    ].join(',');
+    if (signature === hostDataSignatureRef.current) return;
+    hostDataSignatureRef.current = signature;
+    hostRef.current?.setData(storeData);
   }, [storeData]);
 
   const fit = () => fitTo(storeData);
