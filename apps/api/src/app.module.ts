@@ -39,6 +39,7 @@ import { ConnectorsModule } from './connectors/connectors.module';
 import { DistributedLockModule } from './distributed-lock/distributed-lock.module';
 import { ObservabilityModule } from './observability/observability.module';
 import { AdminModule } from './admin/admin.module';
+import { ResilienceModule } from './resilience/resilience.module';
 
 @Module({
   imports: [
@@ -77,6 +78,7 @@ import { AdminModule } from './admin/admin.module';
     DistributedLockModule,
     ObservabilityModule,
     AdminModule,
+    ResilienceModule,
   ],
   providers: [
     { provide: APP_GUARD, useClass: AuthGuard },

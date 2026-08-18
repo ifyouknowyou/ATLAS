@@ -18,12 +18,28 @@ export class AdminGuard implements CanActivate {
       throw new ForbiddenException('Authentication required');
     }
 
-    // Phase 7 trust model: super-admin flag in principal for now;
-    // later ABAC can extend this to role + org + classification + action.
-    const isSystemAdmin =
-      (principal as any).roles?.includes('SYSTEM_ADMIN') ??
-      (principal as any).isSystemAdmin ??
-      false;
+    // Phase 7 trust model: honor real permissions array and system scopes.
+    let isSystemAdmin = false;
+    try {
+      const perms: any = principal.permissions ?? [];
+      isSystemAdmin = Array.isArray(perms)
+        ? perms.some((p: any) => {
+            const code = typeof p === 'string' ? p : p.code;
+            return code === 'admin:system';
+          })
+        : false;
+      if (!isSystemAdmin && (principal as any).roles) {
+        const roles: string[] = Array.isArray((principal as any).roles)
+          ? (principal as any).roles
+          : [];
+        isSystemAdmin = roles.includes('SYSTEM_ADMIN');
+      }
+      if (!isSystemAdmin && (principal as any).isSystemAdmin) {
+        isSystemAdmin = true;
+      }
+    } catch (e) {
+      isSystemAdmin = false;
+    }
 
     if (!isSystemAdmin) {
       throw new ForbiddenException('Administrator access required');
