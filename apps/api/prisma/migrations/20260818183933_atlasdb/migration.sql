@@ -145,86 +145,86 @@ ALTER TABLE "DistributedLock" ALTER COLUMN "createdAt" SET DATA TYPE TIMESTAMP(3
 ALTER TABLE "DistributedLock" ADD CONSTRAINT "DistributedLock_pkey" PRIMARY KEY ("id");
 
 -- AlterTable
-ALTER TABLE "EntityMatchCandidate" RENAME CONSTRAINT "pk_entitymatch" TO "EntityMatchCandidate_pkey",
-ALTER COLUMN "createdAt" SET DATA TYPE TIMESTAMP(3),
-ALTER COLUMN "reviewStartedAt" SET DATA TYPE TIMESTAMP(3),
-ALTER COLUMN "completedAt" SET DATA TYPE TIMESTAMP(3);
+ALTER TABLE "EntityMatchCandidate" RENAME CONSTRAINT "pk_entitymatch" TO "EntityMatchCandidate_pkey";
+ALTER TABLE "EntityMatchCandidate" ALTER COLUMN "createdAt" SET DATA TYPE TIMESTAMP(3);
+ALTER TABLE "EntityMatchCandidate" ALTER COLUMN "reviewStartedAt" SET DATA TYPE TIMESTAMP(3);
+ALTER TABLE "EntityMatchCandidate" ALTER COLUMN "completedAt" SET DATA TYPE TIMESTAMP(3);
 
 -- AlterTable
-ALTER TABLE "GraphAnalysis" RENAME CONSTRAINT "pk_graphanalysis" TO "GraphAnalysis_pkey",
-DROP COLUMN "updatedAt",
-ALTER COLUMN "startedAt" SET DATA TYPE TIMESTAMP(3),
-ALTER COLUMN "completedAt" SET DATA TYPE TIMESTAMP(3),
-ALTER COLUMN "createdAt" SET DATA TYPE TIMESTAMP(3);
+ALTER TABLE "GraphAnalysis" RENAME CONSTRAINT "pk_graphanalysis" TO "GraphAnalysis_pkey";
+ALTER TABLE "GraphAnalysis" DROP COLUMN "updatedAt";
+ALTER TABLE "GraphAnalysis" ALTER COLUMN "startedAt" SET DATA TYPE TIMESTAMP(3);
+ALTER TABLE "GraphAnalysis" ALTER COLUMN "completedAt" SET DATA TYPE TIMESTAMP(3);
+ALTER TABLE "GraphAnalysis" ALTER COLUMN "createdAt" SET DATA TYPE TIMESTAMP(3);
 
 -- AlterTable
-ALTER TABLE "IngestionRecord" RENAME CONSTRAINT "pk_ingestionrecord" TO "IngestionRecord_pkey",
-ALTER COLUMN "createdAt" SET DATA TYPE TIMESTAMP(3);
+ALTER TABLE "IngestionRecord" RENAME CONSTRAINT "pk_ingestionrecord" TO "IngestionRecord_pkey";
+ALTER TABLE "IngestionRecord" ALTER COLUMN "createdAt" SET DATA TYPE TIMESTAMP(3);
 
 -- AlterTable
-ALTER TABLE "IntelligenceBriefing" RENAME CONSTRAINT "pk_intelbriefing" TO "IntelligenceBriefing_pkey",
-DROP COLUMN "updatedAt",
-ALTER COLUMN "generatedAt" SET DATA TYPE TIMESTAMP(3),
-ALTER COLUMN "createdAt" SET DATA TYPE TIMESTAMP(3);
+ALTER TABLE "IntelligenceBriefing" RENAME CONSTRAINT "pk_intelbriefing" TO "IntelligenceBriefing_pkey";
+ALTER TABLE "IntelligenceBriefing" DROP COLUMN "updatedAt";
+ALTER TABLE "IntelligenceBriefing" ALTER COLUMN "generatedAt" SET DATA TYPE TIMESTAMP(3);
+ALTER TABLE "IntelligenceBriefing" ALTER COLUMN "createdAt" SET DATA TYPE TIMESTAMP(3);
 
 -- AlterTable
-ALTER TABLE "IntelligenceFinding" RENAME CONSTRAINT "pk_intelfinding" TO "IntelligenceFinding_pkey",
-DROP COLUMN "createdAt",
-DROP COLUMN "updatedAt";
+ALTER TABLE "IntelligenceFinding" RENAME CONSTRAINT "pk_intelfinding" TO "IntelligenceFinding_pkey";
+ALTER TABLE "IntelligenceFinding" DROP COLUMN "createdAt";
+ALTER TABLE "IntelligenceFinding" DROP COLUMN "updatedAt";
 
 -- AlterTable
-ALTER TABLE "IntelligenceQuestion" RENAME CONSTRAINT "pk_intelquestion" TO "IntelligenceQuestion_pkey",
-DROP COLUMN "createdAt",
-DROP COLUMN "updatedAt",
-DROP COLUMN "priority",
-ADD COLUMN     "priority" "InvestigationPriority" NOT NULL DEFAULT 'MEDIUM';
+ALTER TABLE "IntelligenceQuestion" RENAME CONSTRAINT "pk_intelquestion" TO "IntelligenceQuestion_pkey";
+ALTER TABLE "IntelligenceQuestion" DROP COLUMN "createdAt";
+ALTER TABLE "IntelligenceQuestion" DROP COLUMN "updatedAt";
+ALTER TABLE "IntelligenceQuestion" DROP COLUMN "priority";
+ALTER TABLE "IntelligenceQuestion" ADD COLUMN "priority" "InvestigationPriority" NOT NULL DEFAULT 'MEDIUM';
 
 -- AlterTable
-ALTER TABLE "IntelligenceRule" RENAME CONSTRAINT "pk_intelrule" TO "IntelligenceRule_pkey",
-DROP COLUMN "createdAt",
-DROP COLUMN "updatedAt",
-ALTER COLUMN "lastTriggeredAt" SET DATA TYPE TIMESTAMP(3);
+ALTER TABLE "IntelligenceRule" RENAME CONSTRAINT "pk_intelrule" TO "IntelligenceRule_pkey";
+ALTER TABLE "IntelligenceRule" DROP COLUMN "createdAt";
+ALTER TABLE "IntelligenceRule" DROP COLUMN "updatedAt";
+ALTER TABLE "IntelligenceRule" ALTER COLUMN "lastTriggeredAt" SET DATA TYPE TIMESTAMP(3);
 
 -- AlterTable
-ALTER TABLE "IntelligenceWorkflow" RENAME CONSTRAINT "pk_workflow" TO "IntelligenceWorkflow_pkey",
-DROP COLUMN "createdAt",
-DROP COLUMN "updatedAt";
+ALTER TABLE "IntelligenceWorkflow" RENAME CONSTRAINT "pk_workflow" TO "IntelligenceWorkflow_pkey";
+ALTER TABLE "IntelligenceWorkflow" DROP COLUMN "createdAt";
+ALTER TABLE "IntelligenceWorkflow" DROP COLUMN "updatedAt";
 
 -- AlterTable
-ALTER TABLE "Watchlist" RENAME CONSTRAINT "pk_watchlist" TO "Watchlist_pkey",
-DROP COLUMN "createdAt",
-DROP COLUMN "updatedAt",
-ALTER COLUMN "sources" SET NOT NULL;
+ALTER TABLE "Watchlist" RENAME CONSTRAINT "pk_watchlist" TO "Watchlist_pkey";
+ALTER TABLE "Watchlist" DROP COLUMN "createdAt";
+ALTER TABLE "Watchlist" DROP COLUMN "updatedAt";
+ALTER TABLE "Watchlist" ALTER COLUMN "sources" SET NOT NULL;
 
 -- AlterTable
-ALTER TABLE "WatchlistItem" RENAME CONSTRAINT "pk_watchlistitem" TO "WatchlistItem_pkey",
-ALTER COLUMN "expiresAt" SET DATA TYPE TIMESTAMP(3),
-ALTER COLUMN "createdAt" SET DATA TYPE TIMESTAMP(3),
-ALTER COLUMN "updatedAt" DROP DEFAULT,
-ALTER COLUMN "updatedAt" SET DATA TYPE TIMESTAMP(3);
+ALTER TABLE "WatchlistItem" RENAME CONSTRAINT "pk_watchlistitem" TO "WatchlistItem_pkey";
+ALTER TABLE "WatchlistItem" ALTER COLUMN "expiresAt" SET DATA TYPE TIMESTAMP(3);
+ALTER TABLE "WatchlistItem" ALTER COLUMN "createdAt" SET DATA TYPE TIMESTAMP(3);
+ALTER TABLE "WatchlistItem" ALTER COLUMN "updatedAt" DROP DEFAULT;
+ALTER TABLE "WatchlistItem" ALTER COLUMN "updatedAt" SET DATA TYPE TIMESTAMP(3);
 
 -- AlterTable
-ALTER TABLE "WorkflowApproval" RENAME CONSTRAINT "pk_workflowapproval" TO "WorkflowApproval_pkey",
-ALTER COLUMN "expiresAt" SET DATA TYPE TIMESTAMP(3),
-ALTER COLUMN "approvedAt" SET DATA TYPE TIMESTAMP(3),
-ALTER COLUMN "createdAt" SET DATA TYPE TIMESTAMP(3);
+ALTER TABLE "WorkflowApproval" RENAME CONSTRAINT "pk_workflowapproval" TO "WorkflowApproval_pkey";
+ALTER TABLE "WorkflowApproval" ALTER COLUMN "expiresAt" SET DATA TYPE TIMESTAMP(3);
+ALTER TABLE "WorkflowApproval" ALTER COLUMN "approvedAt" SET DATA TYPE TIMESTAMP(3);
+ALTER TABLE "WorkflowApproval" ALTER COLUMN "createdAt" SET DATA TYPE TIMESTAMP(3);
 
 -- AlterTable
-ALTER TABLE "WorkflowRun" RENAME CONSTRAINT "pk_workflowrun" TO "WorkflowRun_pkey",
-ALTER COLUMN "context" DROP DEFAULT,
-ALTER COLUMN "startedAt" SET DATA TYPE TIMESTAMP(3),
-ALTER COLUMN "completedAt" SET DATA TYPE TIMESTAMP(3),
-ALTER COLUMN "failedAt" SET DATA TYPE TIMESTAMP(3),
-ALTER COLUMN "createdAt" SET DATA TYPE TIMESTAMP(3),
-ALTER COLUMN "updatedAt" DROP DEFAULT,
-ALTER COLUMN "updatedAt" SET DATA TYPE TIMESTAMP(3);
+ALTER TABLE "WorkflowRun" RENAME CONSTRAINT "pk_workflowrun" TO "WorkflowRun_pkey";
+ALTER TABLE "WorkflowRun" ALTER COLUMN "context" DROP DEFAULT;
+ALTER TABLE "WorkflowRun" ALTER COLUMN "startedAt" SET DATA TYPE TIMESTAMP(3);
+ALTER TABLE "WorkflowRun" ALTER COLUMN "completedAt" SET DATA TYPE TIMESTAMP(3);
+ALTER TABLE "WorkflowRun" ALTER COLUMN "failedAt" SET DATA TYPE TIMESTAMP(3);
+ALTER TABLE "WorkflowRun" ALTER COLUMN "createdAt" SET DATA TYPE TIMESTAMP(3);
+ALTER TABLE "WorkflowRun" ALTER COLUMN "updatedAt" DROP DEFAULT;
+ALTER TABLE "WorkflowRun" ALTER COLUMN "updatedAt" SET DATA TYPE TIMESTAMP(3);
 
 -- AlterTable
-ALTER TABLE "WorkflowRunStep" RENAME CONSTRAINT "pk_workflowrunstep" TO "WorkflowRunStep_pkey",
-ALTER COLUMN "executedAt" SET DATA TYPE TIMESTAMP(3),
-ALTER COLUMN "createdAt" SET DATA TYPE TIMESTAMP(3),
-ALTER COLUMN "updatedAt" DROP DEFAULT,
-ALTER COLUMN "updatedAt" SET DATA TYPE TIMESTAMP(3);
+ALTER TABLE "WorkflowRunStep" RENAME CONSTRAINT "pk_workflowrunstep" TO "WorkflowRunStep_pkey";
+ALTER TABLE "WorkflowRunStep" ALTER COLUMN "executedAt" SET DATA TYPE TIMESTAMP(3);
+ALTER TABLE "WorkflowRunStep" ALTER COLUMN "createdAt" SET DATA TYPE TIMESTAMP(3);
+ALTER TABLE "WorkflowRunStep" ALTER COLUMN "updatedAt" DROP DEFAULT;
+ALTER TABLE "WorkflowRunStep" ALTER COLUMN "updatedAt" SET DATA TYPE TIMESTAMP(3);
 
 -- CreateTable
 CREATE TABLE "AuditLog" (
