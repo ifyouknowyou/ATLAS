@@ -9,7 +9,7 @@ import { AdvancedDetectionService } from '../intelligence-analytics/advanced-det
 import { JobQueueService } from '../jobs/job-queue.service';
 import { RulesService } from '../rules/rules.service';
 import { WorkflowsService } from '../workflows/workflows.service';
-import { JsonValue } from '@prisma/client/runtime/library';
+import { JsonValue, InputJsonValue } from '@prisma/client/runtime/library';
 
 export type OrchestrationTaskType =
   | 'THREAT_ANALYSIS'
@@ -26,14 +26,14 @@ export interface OrchestrationContext {
   investigationId?: string;
   entityIds?: string[];
   timeRange?: { start: Date; end: Date };
-  parameters?: JsonValue;
+  parameters?: InputJsonValue;
 }
 
 export interface OrchestrationResult {
   taskId: string;
   status: OrchestrationStatus;
   results: Record<string, any>;
-  metadata?: JsonValue;
+  metadata?: InputJsonValue;
   error?: string;
 }
 
@@ -95,7 +95,7 @@ export class IntelligenceAIOrchestrationService {
         status: 'COMPLETED',
         results: result,
         metadata: {
-          orchestratedAt: new Date(),
+          orchestratedAt: new Date().toISOString(),
           organizationId: orgId,
         },
       };
@@ -145,7 +145,7 @@ export class IntelligenceAIOrchestrationService {
     if (context.entityIds?.length) {
       const entityMatches = await Promise.all(
         context.entityIds.map((entityId) =>
-          this.resolution.resolveEntities(
+          this.resolution.decide(
             this.principal.organizationId,
             entityId,
           ),
