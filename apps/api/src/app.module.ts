@@ -23,6 +23,7 @@ import { TimelineModule } from './timeline/timeline.module';
 import { RealtimeModule } from './realtime/realtime.module';
 import { AiModule } from './ai/ai.module';
 import { ActivityModule } from './common/activity.service';
+import { SecurityModule } from './security/security.module';
 import { EvidenceStorageModule } from './evidence/storage/evidence-storage.module';
 import { RateLimitModule } from './rate-limit/rate-limit.module';
 import { RateLimitGuard } from './rate-limit/rate-limit.guard';
@@ -35,6 +36,9 @@ import { AlertsModule } from './alerts/alerts.module';
 import { WorkflowsModule } from './workflows/workflows.module';
 import { WatchlistsModule } from './watchlists/watchlists.module';
 import { ConnectorsModule } from './connectors/connectors.module';
+import { DistributedLockModule } from './distributed-lock/distributed-lock.module';
+import { ObservabilityModule } from './observability/observability.module';
+import { AdminModule } from './admin/admin.module';
 
 @Module({
   imports: [
@@ -42,6 +46,7 @@ import { ConnectorsModule } from './connectors/connectors.module';
     PrismaModule,
     AuthModule,
     ActivityModule,
+    SecurityModule,
     EvidenceStorageModule,
     RateLimitModule,
     JobsModule,
@@ -69,9 +74,11 @@ import { ConnectorsModule } from './connectors/connectors.module';
     WorkflowsModule,
     WatchlistsModule,
     ConnectorsModule,
+    DistributedLockModule,
+    ObservabilityModule,
+    AdminModule,
   ],
   providers: [
-    // Authentication first, then permission evaluation, then rate limiting.
     { provide: APP_GUARD, useClass: AuthGuard },
     { provide: APP_GUARD, useClass: PermissionsGuard },
     { provide: APP_GUARD, useClass: RateLimitGuard },

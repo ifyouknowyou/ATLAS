@@ -1,6 +1,8 @@
 import type { Metadata, Viewport } from 'next';
 import './globals.css';
 import { Providers } from './providers';
+import CommandPalette from '../components/command-palette';
+import { KeyboardShortcutsProvider } from '../components/keyboard-shortcuts-provider';
 
 export const metadata: Metadata = {
   title: {
@@ -21,7 +23,12 @@ export default function RootLayout({
   return (
     <html lang="en" className="dark">
       <body className="font-sans">
-        <Providers>{children}</Providers>
+        <KeyboardShortcutsProvider>
+          <Providers>
+            {children}
+            <CommandPalette />
+          </Providers>
+        </KeyboardShortcutsProvider>
       </body>
     </html>
   );
