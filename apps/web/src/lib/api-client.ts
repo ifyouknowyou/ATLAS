@@ -88,7 +88,7 @@ export const api = {
     }),
   /** Fetch a binary blob (e.g. report export). */
   download: (path: string, token?: string | null) =>
-    fetch(`${API_PREFIX}${path}`, {
+    fetch(`${API_BASE}${path}`, {
       headers: token ? { authorization: `Bearer ${token}` } : {},
       credentials: 'omit',
     }).then(async (response) => {
