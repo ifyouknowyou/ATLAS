@@ -264,7 +264,8 @@ export class GraphAnalyticsService {
     for (const start of startingNodes) {
       const paths = traversal(start, 0, [start]);
       for (const path of paths.slice(0, 3)) {
-        sampled.push({ path, depth: path.length - 1 };
+        const item = { path, depth: path.length - 1 };
+        sampled.push(item);
       }
     }
     return sampled;

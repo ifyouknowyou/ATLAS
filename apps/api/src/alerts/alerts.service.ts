@@ -2,20 +2,33 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { AuthenticatedPrincipal } from '../auth/principal';
 import { RealtimeService } from '../realtime/realtime.service';
-
-export type AlertSeverity = 'INFO' | 'LOW' | 'MEDIUM' | 'HIGH' | 'CRITICAL';
+import { AlertSeverity, AlertStatus } from '@prisma/client';
 
 @Injectable()
 export class AlertsService {
   constructor(private readonly prisma: PrismaService, private readonly principal: AuthenticatedPrincipal, private readonly realtime: RealtimeService) {}
 
   list(filters: { severity?: string; status?: string }) {
+    const where: any = {
+      organizationId: this.principal.organizationId,
+    };
+
+    if (filters.severity) {
+      const severity = filters.severity as AlertSeverity;
+      if (Object.values(AlertSeverity).includes(severity)) {
+        where.severity = severity;
+      }
+    }
+
+    if (filters.status) {
+      const status = filters.status as AlertStatus;
+      if (Object.values(AlertStatus).includes(status)) {
+        where.status = status;
+      }
+    }
+
     return this.prisma.alert.findMany({
-      where: {
-        organizationId: this.principal.organizationId,
-        ...(filters.severity ? { severity } : {}),
-        ...(filters.status ? { status } : {}),
-      },
+      where,
       orderBy: { createdAt: 'desc' },
       take: 100,
     });
@@ -33,7 +46,10 @@ export class AlertsService {
       },
     });
 
-    await this.realtime.publish(`/alerts/${orgId}`, { action: 'created', alert });
+    await this.realtime.publish(`/alerts/${orgId}`, {
+      type: 'notification',
+      message: `Alert created: ${alert.title}`,
+    });
     return alert;
   }
 

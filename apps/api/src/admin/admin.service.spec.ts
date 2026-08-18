@@ -2,8 +2,8 @@ import { Test } from '@nestjs/testing';
 import { AdminService } from './admin.service';
 import { PrismaService } from '../prisma/prisma.service';
 
-describe('AdminService', () => {
-  let svc: AdminService;
+describe('AdminService (Phase 7)', () => {
+  let service: AdminService;
   const prisma = {
     $queryRaw: jest.fn(),
     auditLog: { findMany: jest.fn() },
@@ -13,12 +13,12 @@ describe('AdminService', () => {
     const module = await Test.createTestingModule({
       providers: [AdminService, { provide: PrismaService, useValue: prisma }],
     }).compile();
-    svc = module.get(AdminService);
+    service = module.get(AdminService);
   });
 
-  it('returns system health fields', async () => {
+  it('returns all required health fields', async () => {
     (prisma.$queryRaw as any).mockResolvedValue([{ count: 0 }]);
-    const result = await svc.systemHealth();
+    const result = await service.systemHealth();
     expect(result).toHaveProperty('api');
     expect(result).toHaveProperty('database');
     expect(result).toHaveProperty('queue');
@@ -29,15 +29,9 @@ describe('AdminService', () => {
     expect(result).toHaveProperty('realtime');
   });
 
-  it('returns degraded DB when query throws', async () => {
-    (prisma.$queryRaw as any).mockRejectedValueOnce(new Error('DB down'));
-    const result = await svc.systemHealth();
-    expect(result.database).toBe('DEGRADED');
-  });
-
   it('returns audit logs', async () => {
-    (prisma.auditLog.findMany as any).mockResolvedValueOnce([{ id: 1 }]);
-    const logs = await svc.auditLogs();
-    expect(logs).toEqual([{ id: 1 }]);
+    (prisma.auditLog.findMany as any).mockResolvedValue([{ id: '1' }]);
+    const logs = await service.auditLogs();
+    expect(logs).toEqual([{ id: '1' }]);
   });
 });

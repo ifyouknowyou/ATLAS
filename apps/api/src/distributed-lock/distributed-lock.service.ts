@@ -38,8 +38,11 @@ export class DistributedLockService implements OnModuleDestroy {
     return Number(count[0]?.count ?? 0) > 0;
   }
 
-  onModuleDestroy() {
+  async onModuleDestroy() {
     // best-effort cleanup
-    this.prisma.$executeRaw`DELETE FROM "DistributedLock" WHERE "owner" LIKE ${`${process.pid}-%`}`).catch(() => {});
+    const likePattern = `${process.pid}-%`;
+    try {
+      await this.prisma.$executeRaw`DELETE FROM "DistributedLock" WHERE "owner" LIKE ${likePattern}`;
+    } catch {}
   }
 }

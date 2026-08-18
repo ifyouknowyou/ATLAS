@@ -53,4 +53,10 @@ export class AdminGuard implements CanActivate {
  * Decorator that mirrors `@RequirePermission` for ops audit endpoints.
  * Imported by `AdminController` so no section header leak occurs.
  */
-export const RequireSystemAdmin = () => AdminGuard;
+export const RequireSystemAdmin = () => {
+  return function (_target: any, _key: string | symbol, descriptor: PropertyDescriptor) {
+    // We are not changing the method, just returning the descriptor.
+    // The actual guard is applied at the controller level via @UseGuards.
+    return descriptor;
+  };
+};

@@ -42,7 +42,7 @@ export class AdminService {
 
   async auditLogs() {
     return this.prisma.auditLog.findMany({
-      orderBy: { createdAt: 'DESC' },
+      orderBy: { createdAt: 'desc' },
     });
   }
 }

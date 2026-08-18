@@ -1,14 +1,11 @@
 import { Body, Controller, Get, Param, Post, Query, UseGuards } from '@nestjs/common';
-import { ApiTags, ApiSecurity } from '@nestjs/swagger';
 import { RequirePermission } from '../rbac/require-permission.decorator';
 import { PermissionsGuard } from '../rbac/permissions.guard';
 import { AuthGuard } from '../auth/auth.guard';
 import { AlertsService } from './alerts.service';
 
-@ApiTags('alerts')
 @Controller('alerts')
 @UseGuards(AuthGuard, PermissionsGuard)
-@ApiSecurity('bearer')
 export class AlertsController {
   constructor(private readonly service: AlertsService) {}
 
