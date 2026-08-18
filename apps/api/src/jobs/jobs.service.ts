@@ -1,13 +1,14 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Inject, Injectable, NotFoundException } from '@nestjs/common';
+import { REQUEST } from '@nestjs/core';
 import { PrismaService } from '../prisma/prisma.service';
-import { AuthenticatedPrincipal } from '../auth/principal';
+import { AuthenticatedRequest } from '../auth/principal';
 import { BackgroundJob, BackgroundJobStatus } from '@prisma/client';
 
 @Injectable()
 export class JobsService {
   constructor(
     private readonly prisma: PrismaService,
-    private readonly principal: AuthenticatedPrincipal,
+    @Inject(REQUEST) private readonly request: AuthenticatedRequest,
   ) {}
 
   async findMany(options: {
@@ -20,7 +21,7 @@ export class JobsService {
   }): Promise<BackgroundJob[]> {
     const { organizationId, investigationId, status, kind, limit = 100, offset = 0 } = options;
     const where: any = {
-      organizationId: organizationId ?? this.principal.organizationId,
+      organizationId: organizationId ?? this.request.principal.organizationId,
       ...(investigationId ? { investigationId } : {}),
       ...(status ? { status } : {}),
       ...(kind ? { kind } : {}),
@@ -37,7 +38,7 @@ export class JobsService {
     const job = await this.prisma.backgroundJob.findFirst({
       where: {
         id,
-        organizationId: this.principal.organizationId,
+        organizationId: this.request.principal.organizationId,
       },
     });
     if (!job) {
@@ -55,7 +56,7 @@ export class JobsService {
   }
 
   async getJobCountsByStatus(organizationId?: string): Promise<Record<string, number>> {
-    const orgId = organizationId ?? this.principal.organizationId;
+    const orgId = organizationId ?? this.request.principal.organizationId;
     const jobs = await this.prisma.backgroundJob.groupBy({
       by: ['status'],
       where: { organizationId: orgId },

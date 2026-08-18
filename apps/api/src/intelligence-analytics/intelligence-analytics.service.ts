@@ -1,6 +1,7 @@
-import { Injectable, NotFoundException, ForbiddenException } from '@nestjs/common';
+import { Inject, Injectable, NotFoundException, ForbiddenException } from '@nestjs/common';
+import { REQUEST } from '@nestjs/core';
 import { PrismaService } from '../prisma/prisma.service';
-import { AuthenticatedPrincipal } from '../auth/principal';
+import { AuthenticatedPrincipal, AuthenticatedRequest } from '../auth/principal';
 import { GraphAnalyticsService } from './graph-analytics.service';
 import { AnomalyDetectionService } from './anomaly-detection.service';
 import { EntityResolutionService } from './entity-resolution.service';
@@ -24,12 +25,16 @@ export interface TriggerAnalysisDto {
 export class IntelligenceAnalyticsService {
   constructor(
     private readonly prisma: PrismaService,
-    private readonly principal: AuthenticatedPrincipal,
+    @Inject(REQUEST) private readonly request: AuthenticatedRequest,
     private readonly graph: GraphAnalyticsService,
     private readonly anomaly: AnomalyDetectionService,
     private readonly resolution: EntityResolutionService,
     private readonly jobQueueService: JobQueueService,
   ) {}
+
+  private get principal(): AuthenticatedPrincipal {
+    return this.request.principal;
+  }
 
   listAnalyses(investigationId?: string) {
     const where: Record<string, unknown> = {

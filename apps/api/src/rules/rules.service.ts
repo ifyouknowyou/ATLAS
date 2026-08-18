@@ -1,16 +1,20 @@
-import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
+import { Inject, Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
+import { REQUEST } from '@nestjs/core';
 import { PrismaService } from '../prisma/prisma.service';
-import { AuthenticatedPrincipal } from '../auth/principal';
+import { AuthenticatedRequest } from '../auth/principal';
 import { InputJsonValue } from '@prisma/client/runtime/library';
 
 @Injectable()
 export class RulesService {
-  constructor(private readonly prisma: PrismaService, private readonly principal: AuthenticatedPrincipal) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    @Inject(REQUEST) private readonly request: AuthenticatedRequest,
+  ) {}
 
   list(organizationId?: string) {
     return this.prisma.intelligenceRule.findMany({
       where: {
-        organizationId: organizationId ?? this.principal.organizationId,
+        organizationId: organizationId ?? this.request.principal.organizationId,
         isActive: true,
       },
     });
@@ -19,19 +23,19 @@ export class RulesService {
   async create(dto: { name: string; description?: string; conditions: InputJsonValue; actions: InputJsonValue }) {
     return this.prisma.intelligenceRule.create({
       data: {
-        organizationId: this.principal.organizationId,
+        organizationId: this.request.principal.organizationId,
         name: dto.name,
         description: dto.description,
         conditions: dto.conditions,
         actions: dto.actions,
-        createdById: this.principal.userId,
+        createdById: this.request.principal.userId,
       },
     });
   }
 
   async evaluate(ruleId: string, context: unknown, log = true) {
     const rule = await this.prisma.intelligenceRule.findFirst({
-      where: { id: ruleId, organizationId: this.principal.organizationId, isActive: true },
+      where: { id: ruleId, organizationId: this.request.principal.organizationId, isActive: true },
     });
     if (!rule) {
       throw new NotFoundException('Rule not found');

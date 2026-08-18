@@ -3,7 +3,8 @@
 import dynamic from 'next/dynamic';
 import { useState } from 'react';
 import Link from 'next/link';
-import { Crosshair, EyeOff } from 'lucide-react';
+import { EyeOff } from 'lucide-react';
+import { Canvas } from '@react-three/fiber';
 import { cn } from '@/lib/cn';
 import type { GraphEdge, GraphNode } from './layout';
 import { nodeColor } from './layout';
@@ -11,7 +12,6 @@ import { useGraph } from './store';
 
 const GraphScene = dynamic(() => import('./GraphCanvas').then((m) => m.GraphScene), {
   ssr: false,
-  loading: () => <GraphLoader />,
 });
 
 export function InvestigationGraph({
@@ -38,7 +38,9 @@ export function InvestigationGraph({
   return (
     <div className={cn('relative h-full w-full overflow-hidden rounded-lg border border-void-line bg-radial-void', className)}>
       {webgl ? (
-        <GraphScene nodeInputs={nodes} edgeInputs={edges} />
+        <Canvas camera={{ position: [0, 0, 8], fov: 45 }} dpr={[1, 2]}>
+          <GraphScene nodeInputs={nodes} edgeInputs={edges} />
+        </Canvas>
       ) : (
         <SvgGraph nodes={nodes} edges={edges} onSelect={setSelected} />
       )}
@@ -90,16 +92,6 @@ export function InvestigationGraph({
           </div>
         </div>
       )}
-    </div>
-  );
-}
-
-function GraphLoader() {
-  return (
-    <div className="flex h-full w-full items-center justify-center">
-      <span className="flex items-center gap-2 font-mono text-xs uppercase tracking-widest text-slate-tech">
-        <Crosshair className="h-4 w-4 animate-spin text-phosphor" /> RENDERING
-      </span>
     </div>
   );
 }

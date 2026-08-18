@@ -1,10 +1,11 @@
-import { Injectable } from '@nestjs/common';
+import { Inject, Injectable } from '@nestjs/common';
+import { REQUEST } from '@nestjs/core';
 import { PrismaService } from '../prisma/prisma.service';
-import { AuthenticatedPrincipal } from '../auth/principal';
+import { AuthenticatedRequest } from '../auth/principal';
 
 @Injectable()
 export class AdvancedDetectionService {
-  constructor(private readonly prisma: PrismaService, private readonly principal: AuthenticatedPrincipal) {
+  constructor(private readonly prisma: PrismaService, @Inject(REQUEST) private readonly request: AuthenticatedRequest) {
     console.log('[Phase6] AdvancedDetectionService ready');
   }
 

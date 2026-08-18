@@ -1,6 +1,7 @@
-import { Injectable, ForbiddenException, BadRequestException } from '@nestjs/common';
+import { Inject, Injectable, ForbiddenException, BadRequestException } from '@nestjs/common';
+import { REQUEST } from '@nestjs/core';
 import { PrismaService } from '../prisma/prisma.service';
-import { AuthenticatedPrincipal } from '../auth/principal';
+import { AuthenticatedPrincipal, AuthenticatedRequest } from '../auth/principal';
 
 interface QuotaConfig {
   maxStorageBytes: number;
@@ -24,7 +25,11 @@ const DEFAULT_QUOTA: QuotaConfig = {
 
 @Injectable()
 export class ResilienceService {
-  constructor(private readonly prisma: PrismaService, private readonly principal: AuthenticatedPrincipal) {}
+  constructor(private readonly prisma: PrismaService, @Inject(REQUEST) private readonly request: AuthenticatedRequest) {}
+
+  private get principal(): AuthenticatedPrincipal {
+    return this.request.principal;
+  }
 
   ensureQuotaAvailable(orgId: string, quotaType: keyof QuotaConfig) {
     // Default implementation: always allow

@@ -36,8 +36,10 @@ export class NotificationsController {
   }
 
   @Get('unread-count')
-  unreadCount(@Req() request: AuthenticatedRequest) {
-    return this.notifications.unreadCount(request.principal);
+  async unreadCount(
+    @Req() request: AuthenticatedRequest,
+  ): Promise<{ count: number }> {
+    return { count: await this.notifications.unreadCount(request.principal) };
   }
 
   @Patch(':id/read')

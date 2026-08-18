@@ -1066,7 +1066,8 @@ export function useUnreadCount() {
   const token = useToken();
   return useQuery({
     queryKey: ['notifications-unread'],
-    queryFn: () => api.get<number>('/notifications/unread-count', token),
+    queryFn: async () =>
+      (await api.get<{ count: number }>('/notifications/unread-count', token)).count,
     enabled: Boolean(token),
     refetchInterval: 30_000,
   });

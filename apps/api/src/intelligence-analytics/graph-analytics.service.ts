@@ -1,6 +1,7 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Inject, Injectable, NotFoundException } from '@nestjs/common';
+import { REQUEST } from '@nestjs/core';
 import { PrismaService } from '../prisma/prisma.service';
-import { AuthenticatedPrincipal } from '../auth/principal';
+import { AuthenticatedPrincipal, AuthenticatedRequest } from '../auth/principal';
 
 export type GraphAnalysisType =
   | 'CENTRALITY'
@@ -27,7 +28,11 @@ type ClusterResult = {
 
 @Injectable()
 export class GraphAnalyticsService {
-  constructor(private readonly prisma: PrismaService, private readonly principal: AuthenticatedPrincipal) {}
+  constructor(private readonly prisma: PrismaService, @Inject(REQUEST) private readonly request: AuthenticatedRequest) {}
+
+  private get principal(): AuthenticatedPrincipal {
+    return this.request.principal;
+  }
 
   async completeAnalysis(analysisId: string) {
     const analysis = await this.fetch(analysisId);

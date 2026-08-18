@@ -1,6 +1,7 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Inject, Injectable, NotFoundException } from '@nestjs/common';
+import { REQUEST } from '@nestjs/core';
 import { PrismaService } from '../prisma/prisma.service';
-import { AuthenticatedPrincipal } from '../auth/principal';
+import { AuthenticatedPrincipal, AuthenticatedRequest } from '../auth/principal';
 
 export type IntelligenceDimension =
   | 'analytical_confidence'
@@ -18,7 +19,11 @@ export interface IntelligenceScore {
 
 @Injectable()
 export class IntelligenceScoringService {
-  constructor(private readonly prisma: PrismaService, private readonly principal: AuthenticatedPrincipal) {}
+  constructor(private readonly prisma: PrismaService, @Inject(REQUEST) private readonly request: AuthenticatedRequest) {}
+
+  private get principal(): AuthenticatedPrincipal {
+    return this.request.principal;
+  }
 
   async score(entityId: string) {
     const entity = await this.prisma.entity.findFirst({

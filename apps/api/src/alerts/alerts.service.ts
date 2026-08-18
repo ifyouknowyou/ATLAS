@@ -1,16 +1,17 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Inject, Injectable, NotFoundException } from '@nestjs/common';
+import { REQUEST } from '@nestjs/core';
 import { PrismaService } from '../prisma/prisma.service';
-import { AuthenticatedPrincipal } from '../auth/principal';
+import { AuthenticatedRequest } from '../auth/principal';
 import { RealtimeService } from '../realtime/realtime.service';
 import { AlertSeverity, AlertStatus } from '@prisma/client';
 
 @Injectable()
 export class AlertsService {
-  constructor(private readonly prisma: PrismaService, private readonly principal: AuthenticatedPrincipal, private readonly realtime: RealtimeService) {}
+  constructor(private readonly prisma: PrismaService, @Inject(REQUEST) private readonly request: AuthenticatedRequest, private readonly realtime: RealtimeService) {}
 
   list(filters: { severity?: string; status?: string }) {
     const where: any = {
-      organizationId: this.principal.organizationId,
+      organizationId: this.request.principal.organizationId,
     };
 
     if (filters.severity) {
@@ -54,7 +55,7 @@ export class AlertsService {
   }
 
   async acknowledge(id: string) {
-    const alert = await this.prisma.alert.findFirst({ where: { id, organizationId: this.principal.organizationId } });
+    const alert = await this.prisma.alert.findFirst({ where: { id, organizationId: this.request.principal.organizationId } });
     if (!alert) {
       throw new NotFoundException('Alert not found');
     }
@@ -62,7 +63,7 @@ export class AlertsService {
   }
 
   async dismiss(id: string, reason?: string) {
-    const alert = await this.prisma.alert.findFirst({ where: { id, organizationId: this.principal.organizationId } });
+    const alert = await this.prisma.alert.findFirst({ where: { id, organizationId: this.request.principal.organizationId } });
     if (!alert) {
       throw new NotFoundException('Alert not found');
     }

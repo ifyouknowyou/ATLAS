@@ -1,6 +1,7 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Inject, Injectable, NotFoundException } from '@nestjs/common';
+import { REQUEST } from '@nestjs/core';
 import { PrismaService } from '../prisma/prisma.service';
-import { AuthenticatedPrincipal } from '../auth/principal';
+import { AuthenticatedPrincipal, AuthenticatedRequest } from '../auth/principal';
 
 export type EntityMatchStatus = 'PENDING' | 'CONFIRMED_MERGE' | 'REJECTED' | 'IGNORED';
 
@@ -15,7 +16,11 @@ interface MatchCandidate {
 
 @Injectable()
 export class EntityResolutionService {
-  constructor(private readonly prisma: PrismaService, private readonly principal: AuthenticatedPrincipal) {}
+  constructor(private readonly prisma: PrismaService, @Inject(REQUEST) private readonly request: AuthenticatedRequest) {}
+
+  private get principal(): AuthenticatedPrincipal {
+    return this.request.principal;
+  }
 
   async findCandidates(baseEntityId: string, limit = 25) {
     const orgId = this.principal.organizationId;

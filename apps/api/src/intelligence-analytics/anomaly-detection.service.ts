@@ -1,6 +1,7 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Inject, Injectable, NotFoundException } from '@nestjs/common';
+import { REQUEST } from '@nestjs/core';
 import { PrismaService } from '../prisma/prisma.service';
-import { AuthenticatedPrincipal } from '../auth/principal';
+import { AuthenticatedPrincipal, AuthenticatedRequest } from '../auth/principal';
 import { JobQueueService } from '../jobs/job-queue.service';
 
 export type AnomalyType =
@@ -24,7 +25,11 @@ export type AnomalyStatus =
 
 @Injectable()
 export class AnomalyDetectionService {
-  constructor(private readonly prisma: PrismaService, private readonly principal: AuthenticatedPrincipal, private readonly jobQueueService: JobQueueService) {}
+  constructor(private readonly prisma: PrismaService, @Inject(REQUEST) private readonly request: AuthenticatedRequest, private readonly jobQueueService: JobQueueService) {}
+
+  private get principal(): AuthenticatedPrincipal {
+    return this.request.principal;
+  }
 
   async detect(orgId: string, investigationId?: string) {
     return this.prisma.anomaly.findMany({

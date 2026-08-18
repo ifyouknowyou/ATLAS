@@ -6,7 +6,7 @@ import {
   useRef,
 } from 'react';
 import { useFrame } from '@react-three/fiber';
-import { Line, OrbitControls, Stars } from '@react-three/drei';
+import { OrbitControls } from '@react-three/drei';
 import type { OrbitControls as OrbitControlsImpl } from 'three-stdlib';
 import * as THREE from 'three';
 import { damp3 } from 'maath/easing';
@@ -51,31 +51,6 @@ export function GraphScene({ nodeInputs, edgeInputs }: SceneInput) {
 
   const positions = useMemo(() => layoutNodes(nodes), [nodes]);
 
-  const lineSets = useMemo(
-    () =>
-      edges
-        .map((edge) => {
-          const a = positions.get(edge.sourceId);
-          const b = positions.get(edge.targetId);
-          if (!a || !b) return null;
-          const mid = a.clone().add(b).multiplyScalar(0.5).normalize().multiplyScalar(4.1);
-          const points: THREE.Vector3[] = [];
-          for (let i = 0; i <= 24; i += 1) {
-            const t = i / 24;
-            const p = new THREE.Vector3()
-              .copy(a)
-              .multiplyScalar((1 - t) ** 2)
-              .add(mid.clone().multiplyScalar(2 * (1 - t) * t))
-              .add(b.clone().multiplyScalar(t * t));
-            points.push(p);
-          }
-          return points;
-        })
-        .filter((p): p is THREE.Vector3[] => p !== null),
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    [edges.length, nodeInputs.length],
-  );
-
   const selectedNode = nodes.find((n) => n.id === selectedId) ?? null;
   useEffect(() => {
     if (selectedNode) {
@@ -99,19 +74,6 @@ export function GraphScene({ nodeInputs, edgeInputs }: SceneInput) {
     <>
       <ambientLight intensity={0.7} />
       <directionalLight position={[6, 10, 6]} intensity={1.1} />
-      <Stars radius={70} depth={40} count={800} factor={2.6} fade speed={0.5} />
-
-      {lineSets.map((points, index) => (
-        <Line
-          key={index}
-          points={points}
-          color="#3f9b91"
-          transparent
-          opacity={0.5}
-          lineWidth={1}
-        />
-      ))}
-
       {nodes.map((node) => {
         const position = positions.get(node.id);
         if (!position) return null;

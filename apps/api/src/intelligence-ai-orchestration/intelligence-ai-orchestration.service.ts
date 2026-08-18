@@ -1,6 +1,7 @@
-import { Injectable, NotFoundException, ForbiddenException } from '@nestjs/common';
+import { Inject, Injectable, NotFoundException, ForbiddenException } from '@nestjs/common';
+import { REQUEST } from '@nestjs/core';
 import { PrismaService } from '../prisma/prisma.service';
-import { AuthenticatedPrincipal } from '../auth/principal';
+import { AuthenticatedPrincipal, AuthenticatedRequest } from '../auth/principal';
 import { IntelligenceAnalyticsService } from '../intelligence-analytics/intelligence-analytics.service';
 import { GraphAnalyticsService } from '../intelligence-analytics/graph-analytics.service';
 import { AnomalyDetectionService } from '../intelligence-analytics/anomaly-detection.service';
@@ -41,7 +42,7 @@ export interface OrchestrationResult {
 export class IntelligenceAIOrchestrationService {
   constructor(
     private readonly prisma: PrismaService,
-    private readonly principal: AuthenticatedPrincipal,
+    @Inject(REQUEST) private readonly request: AuthenticatedRequest,
     private readonly analytics: IntelligenceAnalyticsService,
     private readonly graph: GraphAnalyticsService,
     private readonly anomaly: AnomalyDetectionService,
@@ -51,6 +52,10 @@ export class IntelligenceAIOrchestrationService {
     private readonly rules: RulesService,
     private readonly workflows: WorkflowsService,
   ) {}
+
+  private get principal(): AuthenticatedPrincipal {
+    return this.request.principal;
+  }
 
   async orchestrate(
     taskType: OrchestrationTaskType,

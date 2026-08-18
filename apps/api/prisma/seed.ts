@@ -10,6 +10,14 @@
  *
  * Run: npm run prisma:seed --workspace @atlas/api
  */
+import * as dotenv from 'dotenv';
+import * as path from 'node:path';
+
+dotenv.config({
+  path: path.resolve(__dirname, '../../../.env'),
+  override: true,
+});
+
 import {
   Classification,
   CommentTargetType,
