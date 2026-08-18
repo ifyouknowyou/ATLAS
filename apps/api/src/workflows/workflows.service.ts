@@ -1,11 +1,12 @@
 import { Injectable, NotFoundException, ForbiddenException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { AuthenticatedPrincipal } from '../auth/principal';
-import { InputJsonValue } from '@prisma/client/runtime/library';
+import { JsonNull, InputJsonValue } from '@prisma/client/runtime/library';
+import { JobQueueService } from '../jobs/job-queue.service';
 
 @Injectable()
 export class WorkflowsService {
-  constructor(private readonly prisma: PrismaService, private readonly principal: AuthenticatedPrincipal, private readonly jobs: JobsService) {}
+  constructor(private readonly prisma: PrismaService, private readonly principal: AuthenticatedPrincipal, private readonly jobs: JobQueueService) {}
 
   list(organizationId?: string) {
     return this.prisma.intelligenceWorkflow.findMany({
@@ -13,14 +14,14 @@ export class WorkflowsService {
     });
   }
 
-  create(dto: { name: string; description?: string; kind: string; steps: unknown }) {
+  create(dto: { name: string; description?: string; kind: string; steps: Record<string, unknown> }) {
     return this.prisma.intelligenceWorkflow.create({
       data: {
         organizationId: this.principal.organizationId,
         name: dto.name,
         description: dto.description,
         kind: dto.kind,
-        steps: dto.steps,
+        steps: dto.steps as InputJsonValue,
         createdById: this.principal.userId,
       },
     });
@@ -41,7 +42,7 @@ export class WorkflowsService {
         status: 'RUNNING',
         triggeredById: this.principal.userId,
         triggeredByType: 'USER',
-        context: context as any,
+        context: context as InputJsonValue,
         currentStepIndex: 0,
         runToken: `${workflow.id}-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`,
       },

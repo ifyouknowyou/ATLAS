@@ -53,7 +53,7 @@ export class RulesService {
     const c = condition as Record<string, unknown>;
     switch (c.type) {
       case 'ENTITY_COUNT': {
-        const count = (context as Record<string, unknown>).entityCount ?? 0;
+        const count = Number((context as Record<string, unknown>).entityCount ?? 0);
         return this.compare(count, String(c.value), String(c.operator));
       }
       case 'TAG_MATCH': {

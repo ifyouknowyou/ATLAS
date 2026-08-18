@@ -1,6 +1,6 @@
 import { Test } from '@nestjs/testing';
-import { AdminService } from '../atlas-api/src/admin/admin.service';
-import { PrismaService } from '../atlas-api/src/prisma/prisma.service';
+import { AdminService } from '../../admin/admin.service';
+import { PrismaService } from '../../prisma/prisma.service';
 
 describe('AdminService', () => {
   let admin: AdminService;

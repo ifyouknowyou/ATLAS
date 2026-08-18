@@ -26,7 +26,7 @@ export interface OrchestrationContext {
   investigationId?: string;
   entityIds?: string[];
   timeRange?: { start: Date; end: Date };
-  parameters?: InputJsonValue;
+  params?: InputJsonValue;
 }
 
 export interface OrchestrationResult {
@@ -142,13 +142,10 @@ export class IntelligenceAIOrchestrationService {
     const results: Record<string, any> = {};
 
     // 1. Run entity resolution on key entities
-    if (context.entityIds?.length) {
+    if ((context.entityIds?.length ?? 0) > 0) {
       const entityMatches = await Promise.all(
-        context.entityIds.map((entityId) =>
-          this.resolution.decide(
-            this.principal.organizationId,
-            entityId,
-          ),
+        context.entityIds!.map((entityId) =>
+          this.resolution.findCandidates(entityId),
         ),
       );
       results.entityResolution = entityMatches;
@@ -158,15 +155,15 @@ export class IntelligenceAIOrchestrationService {
     const graphAnalysis = await this.analytics.triggerAnalysis({
       analysisType: 'COMMUNITY',
       investigationId: context.investigationId,
-      parameters: {
-        ...(context.parameters as Record<string, unknown>),
+      params: {
+        ...(context.params as Record<string, unknown>),
         threatDetection: true,
       },
     });
     results.threatGraphAnalysis = graphAnalysis;
 
     // 3. Run anomaly detection on network traffic
-    const anomalies = await this.anomaly.detectAnomalies(
+    const anomalies = await this.anomaly.detect(
       this.principal.organizationId,
       context.investigationId,
     );
@@ -184,14 +181,14 @@ export class IntelligenceAIOrchestrationService {
     const results: Record<string, any> = {};
 
     // 1. Path analysis between entities
-    if (context.entityIds?.length >= 2) {
+    if (context.entityIds && context.entityIds.length >= 2) {
       const pathAnalysis = await this.analytics.triggerAnalysis({
         analysisType: 'PATH',
         investigationId: context.investigationId,
-        parameters: {
+        params: {
           sourceEntity: context.entityIds[0],
           targetEntity: context.entityIds[1],
-          ...(context.parameters as Record<string, unknown>),
+          ...(context.params as Record<string, unknown>),
         },
       });
       results.pathAnalysis = pathAnalysis;
@@ -201,18 +198,18 @@ export class IntelligenceAIOrchestrationService {
     const centralityAnalysis = await this.analytics.triggerAnalysis({
       analysisType: 'CENTRALITY',
       investigationId: context.investigationId,
-      parameters: context.parameters,
+      params: context.params,
     });
     results.centralityAnalysis = centralityAnalysis;
 
     // 3. Temporal analysis for activity patterns
     if (context.timeRange) {
       const temporalAnalysis = await this.analytics.triggerAnalysis({
-        analysisType: 'TEMPORAL',
+        analysisType: 'TEMPORAL' as const,
         investigationId: context.investigationId,
-        parameters: {
+        params: {
           timeRange: context.timeRange,
-          ...(context.parameters as Record<string, unknown>),
+          ...(context.params as Record<string, unknown>),
         },
       });
       results.temporalAnalysis = temporalAnalysis;
@@ -236,26 +233,23 @@ export class IntelligenceAIOrchestrationService {
         // 1. Get entity connections via graph analysis
         const connections = await this.analytics.triggerAnalysis({
           analysisType: 'COMMUNITY',
-          parameters: { focusEntity: entityId },
+          params: { focusEntity: entityId },
         });
 
         // 2. Check for anomalies associated with entity
-        const anomalies = await this.anomaly.detectAnomalies(
+        const anomalies = await this.anomaly.detect(
           this.principal.organizationId,
           undefined, // investigationId - could filter by entity in future
         );
 
         // 3. Run entity resolution to find related entities
-        const relatedEntities = await this.resolution.resolveEntities(
-          this.principal.organizationId,
-          entityId,
-        );
+        const relatedEntities = await this.resolution.findCandidates(entityId);
 
         return {
           entityId,
           connections,
-          anomalies: anomalies.list,
-          relatedEntities: relatedEntities.matches,
+          anomalies,
+          relatedEntities,
         };
       }),
     );
@@ -280,7 +274,7 @@ export class IntelligenceAIOrchestrationService {
     const clustering = await this.analytics.triggerAnalysis({
       analysisType: 'CLUSTERING',
       investigationId: context.investigationId,
-      parameters: context.parameters,
+      params: context.params,
     });
     results.communityClustering = clustering;
 
@@ -289,10 +283,10 @@ export class IntelligenceAIOrchestrationService {
       const temporal = await this.analytics.triggerAnalysis({
         analysisType: 'TEMPORAL',
         investigationId: context.investigationId,
-        parameters: {
+        params: {
           anomalyDetection: true,
           timeRange: context.timeRange,
-          ...(context.parameters as Record<string, unknown>),
+          ...(context.params as Record<string, unknown>),
         },
       });
       results.temporalAnalysis = temporal;
@@ -313,21 +307,21 @@ export class IntelligenceAIOrchestrationService {
     const changeDetection = await this.analytics.triggerAnalysis({
       analysisType: 'CHANGE_DETECTION',
       investigationId: context.investigationId,
-      parameters: {
+      params: {
         predictive: true,
-        ...(context.parameters as Record<string, unknown>),
+        ...(context.params as Record<string, unknown>),
       },
     });
     results.trendAnalysis = changeDetection;
 
     // 2. Path analysis for predicting future entity interactions
-    if (context.entityIds?.length >= 2) {
+    if (context.entityIds && context.entityIds.length >= 2) {
       const pathPrediction = await this.analytics.triggerAnalysis({
         analysisType: 'PATH',
         investigationId: context.investigationId,
-        parameters: {
+        params: {
           predictive: true,
-          ...(context.parameters as Record<string, unknown>),
+          ...(context.params as Record<string, unknown>),
         },
       });
       results.pathPrediction = pathPrediction;
@@ -342,13 +336,10 @@ export class IntelligenceAIOrchestrationService {
     const results: Record<string, any> = {};
 
     // 1. Immediate entity resolution for IOCs (Indicators of Compromise)
-    if (context.entityIds?.length) {
+    if (context.entityIds && context.entityIds.length) {
       const iocResolution = await Promise.all(
         context.entityIds.map((entityId) =>
-          this.resolution.resolveEntities(
-            this.principal.organizationId,
-            entityId,
-          ),
+          this.resolution.findCandidates(entityId),
         ),
       );
       results.iocResolution = iocResolution;
@@ -358,9 +349,9 @@ export class IntelligenceAIOrchestrationService {
     const blastRadius = await this.analytics.triggerAnalysis({
       analysisType: 'COMMUNITY',
       investigationId: context.investigationId,
-      parameters: {
+      params: {
         blastRadius: true,
-        ...(context.parameters as Record<string, unknown>),
+        ...(context.params as Record<string, unknown>),
       },
     });
     results.blastRadiusAnalysis = blastRadius;
@@ -370,10 +361,10 @@ export class IntelligenceAIOrchestrationService {
       const timeline = await this.analytics.triggerAnalysis({
         analysisType: 'TEMPORAL',
         investigationId: context.investigationId,
-        parameters: {
+        params: {
           incidentTimeline: true,
           timeRange: context.timeRange,
-          ...(context.parameters as Record<string, unknown>),
+          ...(context.params as Record<string, unknown>),
         },
       });
       results.incidentTimeline = timeline;
@@ -395,9 +386,9 @@ export class IntelligenceAIOrchestrationService {
     const complianceScan = await this.analytics.triggerAnalysis({
       analysisType: 'COMMUNITY',
       investigationId: context.investigationId,
-      parameters: {
+      params: {
         complianceCheck: true,
-        ...(context.parameters as Record<string, unknown>),
+        ...(context.params as Record<string, unknown>),
       },
     });
     results.complianceScan = complianceScan;
