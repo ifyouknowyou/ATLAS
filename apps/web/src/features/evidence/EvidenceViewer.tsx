@@ -1,5 +1,6 @@
 'use client';
 
+import Image from 'next/image';
 import { useEffect, useState } from 'react';
 import { useEvidenceDetail } from '@/lib/queries';
 import { useAuth } from '@/lib/auth-store';
@@ -46,9 +47,12 @@ export function EvidenceViewer({ id }: { id: string }) {
   if (isImage && signedUrl) {
     return (
       <div className="flex h-full min-h-[320px] items-center justify-center overflow-hidden rounded border border-void-line bg-void-raised/40 p-4">
-        <img
+        <Image
           src={signedUrl}
           alt={String(evidence?.name ?? 'evidence preview')}
+          width={1200}
+          height={800}
+          unoptimized
           className="max-h-full max-w-full object-contain"
         />
       </div>

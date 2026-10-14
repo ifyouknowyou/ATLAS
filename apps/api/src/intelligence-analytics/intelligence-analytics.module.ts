@@ -2,6 +2,7 @@ import { Module } from '@nestjs/common';
 import { PrismaModule } from '../prisma/prisma.module';
 import { AiModule } from '../ai/ai.module';
 import { JobsModule } from '../jobs/jobs.module';
+import { AuthModule } from '../auth/auth.module';
 import { IntelligenceAnalyticsService } from './intelligence-analytics.service';
 import { IntelligenceAnalyticsController } from './intelligence-analytics.controller';
 import { GraphAnalyticsService } from './graph-analytics.service';
@@ -10,7 +11,7 @@ import { EntityResolutionService } from './entity-resolution.service';
 import { IntelligenceScoringService } from './scoring.service';
 
 @Module({
-  imports: [PrismaModule, AiModule, JobsModule],
+  imports: [PrismaModule, AiModule, JobsModule, AuthModule],
   providers: [
     IntelligenceAnalyticsService,
     GraphAnalyticsService,

@@ -1,4 +1,5 @@
 import { Test } from '@nestjs/testing';
+import { ConfigService } from '@nestjs/config';
 import { SecurityService } from './security.service';
 
 describe('SecurityService (Phase 7)', () => {
@@ -6,7 +7,10 @@ describe('SecurityService (Phase 7)', () => {
 
   beforeEach(async () => {
     const module = await Test.createTestingModule({
-      providers: [SecurityService],
+      providers: [
+        SecurityService,
+        { provide: ConfigService, useValue: { get: jest.fn() } },
+      ],
     }).compile();
     service = module.get(SecurityService);
   });

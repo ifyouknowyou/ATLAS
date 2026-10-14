@@ -4,7 +4,8 @@ import { PrismaService } from '../prisma/prisma.service';
 
 describe('HealthService (Phase 7)', () => {
   let service: HealthService;
-  const prisma = { $queryRaw: jest.fn() } as unknown as PrismaService;
+  const queryRaw = jest.fn();
+  const prisma = { $queryRaw: queryRaw } as unknown as PrismaService;
 
   beforeEach(async () => {
     const module = await Test.createTestingModule({
@@ -19,13 +20,13 @@ describe('HealthService (Phase 7)', () => {
   });
 
   it('readiness healthy when DB ok', async () => {
-    (prisma.$queryRaw as any).mockResolvedValue([{ count: 0 }]);
+    queryRaw.mockResolvedValue([{ count: 0 }]);
     const result = await service.checkReadiness({});
     expect(result.status).toBe('healthy');
   });
 
   it('readiness unhealthy when DB down', async () => {
-    (prisma.$queryRaw as any).mockRejectedValue(new Error('DB down'));
+    queryRaw.mockRejectedValue(new Error('DB down'));
     const result = await service.checkReadiness({});
     expect(result.status).toBe('unhealthy');
   });

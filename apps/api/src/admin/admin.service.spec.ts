@@ -4,9 +4,11 @@ import { PrismaService } from '../prisma/prisma.service';
 
 describe('AdminService (Phase 7)', () => {
   let service: AdminService;
+  const queryRaw = jest.fn();
+  const findMany = jest.fn();
   const prisma = {
-    $queryRaw: jest.fn(),
-    auditLog: { findMany: jest.fn() },
+    $queryRaw: queryRaw,
+    auditLog: { findMany },
   } as unknown as PrismaService;
 
   beforeEach(async () => {
@@ -17,7 +19,7 @@ describe('AdminService (Phase 7)', () => {
   });
 
   it('returns all required health fields', async () => {
-    (prisma.$queryRaw as any).mockResolvedValue([{ count: 0 }]);
+    queryRaw.mockResolvedValue([{ count: 0 }]);
     const result = await service.systemHealth();
     expect(result).toHaveProperty('api');
     expect(result).toHaveProperty('database');
@@ -30,7 +32,7 @@ describe('AdminService (Phase 7)', () => {
   });
 
   it('returns audit logs', async () => {
-    (prisma.auditLog.findMany as any).mockResolvedValue([{ id: '1' }]);
+    findMany.mockResolvedValue([{ id: '1' }]);
     const logs = await service.auditLogs();
     expect(logs).toEqual([{ id: '1' }]);
   });

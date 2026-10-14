@@ -2,6 +2,7 @@ import { Inject, Injectable, NotFoundException } from '@nestjs/common';
 import { REQUEST } from '@nestjs/core';
 import { PrismaService } from '../prisma/prisma.service';
 import { AuthenticatedPrincipal, AuthenticatedRequest } from '../auth/principal';
+import { Prisma } from '@prisma/client';
 
 export type GraphAnalysisType =
   | 'CENTRALITY'
@@ -55,7 +56,11 @@ export class GraphAnalyticsService {
 
     await this.prisma.graphAnalysis.update({
       where: { id: analysisId },
-      data: { status: 'COMPLETED', result: result as any, completedAt: new Date() },
+      data: {
+        status: 'COMPLETED',
+        result: result as Prisma.InputJsonValue,
+        completedAt: new Date(),
+      },
     });
 
     return result;
@@ -282,11 +287,13 @@ export class GraphAnalyticsService {
       orderBy: { createdAt: 'desc' },
     });
     const current = edges;
-    const previous = snapshots.length > 0 ? (snapshots[0] as any).result?.edges ?? [] : [];
-
-    const previousSet = new Set(previous.map((e: { id?: string; sourceId: string; targetId: string }) => `${e.sourceId}->${e.targetId}`));
+    const previous = snapshotEdges(snapshots[0]?.result);
+    const previousSet = new Set(
+      previous.map((edge) => `${edge.sourceId}->${edge.targetId}`),
+    );
+    const currentSet = new Set(current.map((edge) => `${edge.sourceId}->${edge.targetId}`));
     const added = current.filter((e) => !previousSet.has(`${e.sourceId}->${e.targetId}`));
-    const removed = previous.filter((e: { id?: string; sourceId: string; targetId: string }) => !previousSet.has(`${e.sourceId}->${e.targetId}`));
+    const removed = previous.filter((edge) => !currentSet.has(`${edge.sourceId}->${edge.targetId}`));
 
     return {
       addedCount: added.length,
@@ -295,4 +302,29 @@ export class GraphAnalyticsService {
       removed,
     };
   }
+}
+
+interface SnapshotEdge {
+  id?: string;
+  sourceId: string;
+  targetId: string;
+}
+
+function snapshotEdges(value: unknown): SnapshotEdge[] {
+  if (typeof value !== 'object' || value === null || Array.isArray(value)) {
+    return [];
+  }
+  const edges = (value as Record<string, unknown>).edges;
+  if (!Array.isArray(edges)) {
+    return [];
+  }
+  return edges.filter(
+    (edge): edge is SnapshotEdge =>
+      typeof edge === 'object' &&
+      edge !== null &&
+      'sourceId' in edge &&
+      typeof edge.sourceId === 'string' &&
+      'targetId' in edge &&
+      typeof edge.targetId === 'string',
+  );
 }

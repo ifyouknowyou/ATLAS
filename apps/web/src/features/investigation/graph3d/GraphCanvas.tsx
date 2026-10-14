@@ -6,7 +6,7 @@ import {
   useRef,
 } from 'react';
 import { useFrame } from '@react-three/fiber';
-import { OrbitControls } from '@react-three/drei';
+import { Line, OrbitControls } from '@react-three/drei';
 import type { OrbitControls as OrbitControlsImpl } from 'three-stdlib';
 import * as THREE from 'three';
 import { damp3 } from 'maath/easing';
@@ -38,15 +38,12 @@ export function GraphScene({ nodeInputs, edgeInputs }: SceneInput) {
   const setSelected = useGraph((s) => s.setSelected);
 
   const nodes = useMemo<GraphNode[]>(
-    () =>
-      nodeInputs.map((n) => ({ ...n })),
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    [nodeInputs.length],
+    () => nodeInputs.map((node) => ({ ...node })),
+    [nodeInputs],
   );
   const edges = useMemo<GraphEdge[]>(
-    () => edgeInputs.map((e) => ({ ...e })),
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    [edgeInputs.length],
+    () => edgeInputs.map((edge) => ({ ...edge })),
+    [edgeInputs],
   );
 
   const positions = useMemo(() => layoutNodes(nodes), [nodes]);
@@ -103,6 +100,21 @@ export function GraphScene({ nodeInputs, edgeInputs }: SceneInput) {
               toneMapped={false}
             />
           </mesh>
+        );
+      })}
+      {edges.map((edge) => {
+        const source = positions.get(edge.sourceId);
+        const target = positions.get(edge.targetId);
+        if (!source || !target) return null;
+        return (
+          <Line
+            key={edge.id}
+            points={[source, target]}
+            color="#3f9b91"
+            lineWidth={1}
+            transparent
+            opacity={0.45}
+          />
         );
       })}
 

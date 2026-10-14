@@ -7,7 +7,6 @@ import {
   Download,
   FilePlus2,
   FileText,
-  GitCommitVertical,
   Plus,
   RefreshCw,
   Send,
@@ -27,7 +26,6 @@ import {
   useUpdateReportBlock,
 } from '@/lib/queries';
 import { useAuth } from '@/lib/auth-store';
-import { useRealtimeStore } from '@/lib/realtime-store';
 import { usePresence } from '@/lib/use-presence';
 import { api } from '@/lib/api-client';
 import { Panel } from '@/components/ui/Panel';
@@ -107,9 +105,6 @@ export default function ReportWorkspacePage() {
   const [aiPrompt, setAiPrompt] = useState('');
   const [message, setMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
-
-  const realtimeState = useRealtimeStore((s) => s.connectionState);
-  const delta = useRealtimeStore((s) => s.reportDeltas[id]);
 
   const sections = useMemo(() => report?.sections ?? [], [report]);
   const selectedSection =

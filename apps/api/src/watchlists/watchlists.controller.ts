@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Param, Post, Query, UseGuards } from '@nestjs/common';
+import { Body, Controller, Get, Param, Post, UseGuards } from '@nestjs/common';
 import { ApiTags, ApiSecurity } from '@nestjs/swagger';
 import { RequirePermission } from '../rbac/require-permission.decorator';
 import { PermissionsGuard } from '../rbac/permissions.guard';
@@ -14,8 +14,8 @@ export class WatchlistsController {
 
   @Get()
   @RequirePermission('watchlist.read')
-  list(@Query('organizationId') organizationId?: string) {
-    return this.service.list(organizationId);
+  list() {
+    return this.service.list();
   }
 
   @Post()

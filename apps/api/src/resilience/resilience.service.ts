@@ -1,4 +1,4 @@
-import { Inject, Injectable, ForbiddenException, BadRequestException } from '@nestjs/common';
+import { Inject, Injectable, ForbiddenException, NotImplementedException } from '@nestjs/common';
 import { REQUEST } from '@nestjs/core';
 import { PrismaService } from '../prisma/prisma.service';
 import { AuthenticatedPrincipal, AuthenticatedRequest } from '../auth/principal';
@@ -31,17 +31,15 @@ export class ResilienceService {
     return this.request.principal;
   }
 
-  ensureQuotaAvailable(orgId: string, quotaType: keyof QuotaConfig) {
-    // Default implementation: always allow
-    // In a real implementation, check organization quotas
-    return true;
+  ensureQuotaAvailable(_orgId: string, _quotaType: keyof QuotaConfig) {
+    throw new NotImplementedException('Organization quota enforcement is not implemented');
   }
 
   getQuota(quotaType: keyof QuotaConfig) {
     return DEFAULT_QUOTA[quotaType];
   }
 
-  enforceExportSecurity(resourceType: string, classification: string, userId: string) {
+  enforceExportSecurity(_resourceType: string, classification: string, _userId: string) {
     const allowed = ['PUBLIC', 'INTERNAL'];
     if (!allowed.includes(classification)) {
       throw new ForbiddenException('Export denied for classification level');

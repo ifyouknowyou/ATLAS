@@ -2,13 +2,11 @@ import { Injectable, NestMiddleware } from '@nestjs/common';
 import { Request, Response, NextFunction } from 'express';
 import { randomUUID } from 'node:crypto';
 
-declare global {
-  namespace Express {
-    interface Request {
-      requestId?: string;
-      traceId?: string;
-      startTime?: number;
-    }
+declare module 'express-serve-static-core' {
+  interface Request {
+    requestId?: string;
+    traceId?: string;
+    startTime?: number;
   }
 }
 

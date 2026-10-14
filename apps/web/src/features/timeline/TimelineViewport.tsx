@@ -23,13 +23,14 @@ const PAD = 40;
  */
 export function TimelineViewport({ investigationId, entityId, onSelectEvent, selectedEventId }: TimelineViewportProps) {
   const { data, isLoading, isError } = useTimeline({ investigationId, entityId, limit: 200 });
-  const items = data?.items ?? [];
+  const items = data?.items;
 
   const layout = useMemo(() => {
-    const bounds = timelineBounds(items);
-    const density = bucketEvents(items, bounds.min, bounds.max, 60);
+    const rows = items ?? [];
+    const bounds = timelineBounds(rows);
+    const density = bucketEvents(rows, bounds.min, bounds.max, 60);
     const byKind = new Map<string, TimelineRow[]>();
-    for (const e of items) {
+    for (const e of rows) {
       const list = byKind.get(e.kind) ?? [];
       list.push(e);
       byKind.set(e.kind, list);
@@ -46,7 +47,7 @@ export function TimelineViewport({ investigationId, entityId, onSelectEvent, sel
   if (isError) {
     return <div className="flex h-40 items-center justify-center font-mono text-[11px] text-amber-signal">TIMELINE UNAVAILABLE</div>;
   }
-  if (items.length === 0) {
+  if ((items?.length ?? 0) === 0) {
     return <div className="flex h-40 items-center justify-center font-mono text-[11px] text-slate-tech">NO EVENTS</div>;
   }
 

@@ -48,9 +48,13 @@ export class StructuredLoggerService {
   }
 
   child(context: Record<string, unknown>) {
-    const child = { ...(this as any) } as StructuredLoggerService;
-    const originalInfo = child.info.bind(child);
-    child.info = (message: string, meta: LogMeta = {}) => originalInfo(message, { ...context, ...meta });
+    const child = new StructuredLoggerService();
+    child.info = (message: string, meta: LogMeta = {}) =>
+      this.info(message, { ...context, ...meta });
+    child.warn = (message: string, meta: LogMeta = {}) =>
+      this.warn(message, { ...context, ...meta });
+    child.error = (message: string, error?: Error, meta: LogMeta = {}) =>
+      this.error(message, error, { ...context, ...meta });
     return child;
   }
 }

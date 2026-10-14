@@ -1,3 +1,4 @@
+import { PERMISSIONS } from './types';
 import type { Permission, Role } from './types';
 
 /**
@@ -8,46 +9,7 @@ import type { Permission, Role } from './types';
  * role checks in UI are never a security boundary, only an affordance.
  */
 
-const ALL: Permission[] = [
-  'investigation.read',
-  'investigation.create',
-  'investigation.update',
-  'investigation.delete',
-
-  'entity.read',
-  'entity.create',
-  'entity.update',
-  'entity.delete',
-
-  'evidence.read',
-  'evidence.create',
-  'evidence.update',
-  'evidence.delete',
-  'evidence.download',
-  'evidence.annotate',
-  'evidence.process',
-  'evidence.classify',
-
-  'report.read',
-  'report.create',
-  'report.update',
-  'report.delete',
-  'report.publish',
-  'report.review',
-  'report.approve',
-  'report.export',
-
-  'comment.create',
-  'comment.resolve',
-  'comment.delete',
-  'notification.read',
-  'notification.update',
-  'collaboration.read',
-
-  'workspace.manage',
-  'members.manage',
-  'settings.manage',
-];
+const ALL: readonly Permission[] = PERMISSIONS;
 
 /** Default permission set granted to each role. */
 const ROLE_PERMISSIONS: Record<Role, readonly Permission[]> = {

@@ -4,10 +4,12 @@ import { PrismaService } from '../prisma/prisma.service';
 
 describe('DistributedLockService (Phase 7)', () => {
   let service: DistributedLockService;
+  const executeRaw = jest.fn();
+  const deleteLock = jest.fn();
   const prisma = {
-    $executeRaw: jest.fn(),
+    $executeRaw: executeRaw,
     $queryRaw: jest.fn(),
-    distributedLock: { delete: jest.fn() },
+    distributedLock: { delete: deleteLock },
   } as unknown as PrismaService;
 
   beforeEach(async () => {
@@ -18,17 +20,17 @@ describe('DistributedLockService (Phase 7)', () => {
   });
 
   it('acquires lock when insert succeeds', async () => {
-    (prisma.$executeRaw as any).mockResolvedValue(1);
+    executeRaw.mockResolvedValue(1);
     expect(await service.acquire('k', 1000)).toBe(true);
   });
 
   it('fails acquire when conflict', async () => {
-    (prisma.$executeRaw as any).mockResolvedValue(0);
+    executeRaw.mockResolvedValue(0);
     expect(await service.acquire('k', 1000)).toBe(false);
   });
 
   it('releases without error', async () => {
-    (prisma.distributedLock.delete as any).mockResolvedValue(null);
+    deleteLock.mockResolvedValue(null);
     await expect(service.release('k')).resolves.toBeUndefined();
   });
 });

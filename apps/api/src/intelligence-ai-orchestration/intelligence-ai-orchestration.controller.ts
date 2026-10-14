@@ -1,4 +1,14 @@
-import { Body, Controller, Get, Param, Post, Query, UseGuards } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  DefaultValuePipe,
+  Get,
+  Param,
+  ParseIntPipe,
+  Post,
+  Query,
+  UseGuards,
+} from '@nestjs/common';
 import { ApiTags, ApiSecurity } from '@nestjs/swagger';
 import { RequirePermission } from '../rbac/require-permission.decorator';
 import { PermissionsGuard } from '../rbac/permissions.guard';
@@ -50,9 +60,8 @@ export class IntelligenceAIOrchestrationController {
   @Get()
   @RequirePermission('intelligence.orchestration.read')
   async list(
-    @Query('organizationId') organizationId?: string,
-    @Query('limit') limit: number = 100,
+    @Query('limit', new DefaultValuePipe(100), ParseIntPipe) limit: number,
   ) {
-    return this.service.listOrchestrations(organizationId, limit);
+    return this.service.listOrchestrations(limit);
   }
 }

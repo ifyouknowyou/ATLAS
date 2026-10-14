@@ -1,6 +1,7 @@
 import { Global, Module } from '@nestjs/common';
 import { JobQueueService } from './job-queue.service';
 import { JobRunnerService } from './job-runner.service';
+import { AppConfigModule } from '../config/app-config.module';
 
 /**
  * Background processing (Phase 5 §60). @Global so feature modules (evidence
@@ -9,6 +10,7 @@ import { JobRunnerService } from './job-runner.service';
  */
 @Global()
 @Module({
+  imports: [AppConfigModule],
   providers: [JobQueueService, JobRunnerService],
   exports: [JobQueueService, JobRunnerService],
 })

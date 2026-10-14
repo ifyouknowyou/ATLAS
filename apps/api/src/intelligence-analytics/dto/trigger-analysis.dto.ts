@@ -1,4 +1,5 @@
-import { IsOptional, IsEnum, IsIn } from 'class-validator';
+import { IsOptional, IsIn } from 'class-validator';
+import { Prisma } from '@prisma/client';
 
 export const GRAPH_ANALYSIS_TYPES = [
   'CENTRALITY',
@@ -19,5 +20,5 @@ export class TriggerAnalysisDto {
   investigationId?: string;
 
   @IsOptional()
-  params?: Record<string, unknown>;
+  params?: Prisma.InputJsonValue;
 }

@@ -53,7 +53,7 @@ export class EntityResolutionService {
     const ordered = results.sort((a, b) => b.similarityScore - a.similarityScore).slice(0, 50);
 
     await this.prisma.$transaction(
-      ordered.map((candidate, index) =>
+      ordered.map((candidate) =>
         this.prisma.entityMatchCandidate.upsert({
           where: { id: candidate.id },
           update: { similarityScore: candidate.similarityScore, matchFactors: candidate.matchFactors },

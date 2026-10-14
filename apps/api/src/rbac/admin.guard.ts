@@ -18,45 +18,10 @@ export class AdminGuard implements CanActivate {
       throw new ForbiddenException('Authentication required');
     }
 
-    // Phase 7 trust model: honor real permissions array and system scopes.
-    let isSystemAdmin = false;
-    try {
-      const perms: any = principal.permissions ?? [];
-      isSystemAdmin = Array.isArray(perms)
-        ? perms.some((p: any) => {
-            const code = typeof p === 'string' ? p : p.code;
-            return code === 'admin:system';
-          })
-        : false;
-      if (!isSystemAdmin && (principal as any).roles) {
-        const roles: string[] = Array.isArray((principal as any).roles)
-          ? (principal as any).roles
-          : [];
-        isSystemAdmin = roles.includes('SYSTEM_ADMIN');
-      }
-      if (!isSystemAdmin && (principal as any).isSystemAdmin) {
-        isSystemAdmin = true;
-      }
-    } catch (e) {
-      isSystemAdmin = false;
-    }
-
-    if (!isSystemAdmin) {
+    if (principal.role !== 'OWNER' && principal.role !== 'ADMIN') {
       throw new ForbiddenException('Administrator access required');
     }
 
     return true;
   }
 }
-
-/**
- * Decorator that mirrors `@RequirePermission` for ops audit endpoints.
- * Imported by `AdminController` so no section header leak occurs.
- */
-export const RequireSystemAdmin = () => {
-  return function (_target: any, _key: string | symbol, descriptor: PropertyDescriptor) {
-    // We are not changing the method, just returning the descriptor.
-    // The actual guard is applied at the controller level via @UseGuards.
-    return descriptor;
-  };
-};

@@ -1,5 +1,6 @@
-import { Inject, Injectable, NotFoundException, ForbiddenException } from '@nestjs/common';
+import { Inject, Injectable, NotFoundException } from '@nestjs/common';
 import { REQUEST } from '@nestjs/core';
+import { BackgroundJobStatus } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import { AuthenticatedPrincipal, AuthenticatedRequest } from '../auth/principal';
 import { IntelligenceAnalyticsService } from '../intelligence-analytics/intelligence-analytics.service';
@@ -10,7 +11,7 @@ import { AdvancedDetectionService } from '../intelligence-analytics/advanced-det
 import { JobQueueService } from '../jobs/job-queue.service';
 import { RulesService } from '../rules/rules.service';
 import { WorkflowsService } from '../workflows/workflows.service';
-import { JsonValue, InputJsonValue } from '@prisma/client/runtime/library';
+import { InputJsonValue } from '@prisma/client/runtime/library';
 
 export type OrchestrationTaskType =
   | 'THREAT_ANALYSIS'
@@ -33,7 +34,7 @@ export interface OrchestrationContext {
 export interface OrchestrationResult {
   taskId: string;
   status: OrchestrationStatus;
-  results: Record<string, any>;
+  results: Record<string, unknown>;
   metadata?: InputJsonValue;
   error?: string;
 }
@@ -65,10 +66,11 @@ export class IntelligenceAIOrchestrationService {
     const taskId = `orchestration_${Date.now()}_${Math.random()
       .toString(36)
       .substring(2, 9)}`;
+    let jobId: string | undefined;
 
     try {
       // Enqueue the orchestration as a background job
-      const { created } = await this.jobQueue.enqueue({
+      const job = await this.jobQueue.enqueue({
         kind: 'ORCHESTRATION_TASK',
         payload: {
           taskId,
@@ -81,19 +83,12 @@ export class IntelligenceAIOrchestrationService {
         investigationId: context.investigationId,
         createdById: this.principal.userId,
       });
-
-      if (!created) {
-        // If not created due to deduplication, return existing status
-        return this.getOrchestrationStatus(taskId);
-      }
+      jobId = job.id;
 
       // For immediate execution in development/testing, we could run synchronously
       // In production, this would be handled by the job queue
-      const result = await this.executeOrchestration(
-        taskType,
-        context,
-        taskId,
-      );
+      const result = await this.executeOrchestration(taskType, context);
+      await this.jobQueue.complete(jobId, result);
 
       return {
         taskId,
@@ -105,11 +100,15 @@ export class IntelligenceAIOrchestrationService {
         },
       };
     } catch (error) {
+      const message = error instanceof Error ? error.message : 'Orchestration failed';
+      if (jobId) {
+        await this.jobQueue.fail(jobId, message, false);
+      }
       return {
         taskId,
         status: 'FAILED',
         results: {},
-        error: (error as Error).message,
+        error: message,
       };
     }
   }
@@ -117,10 +116,7 @@ export class IntelligenceAIOrchestrationService {
   private async executeOrchestration(
     taskType: OrchestrationTaskType,
     context: OrchestrationContext,
-    taskId: string,
-  ): Promise<Record<string, any>> {
-    const orgId = this.principal.organizationId;
-
+  ): Promise<Record<string, unknown>> {
     switch (taskType) {
       case 'THREAT_ANALYSIS':
         return await this.performThreatAnalysis(context);
@@ -143,8 +139,8 @@ export class IntelligenceAIOrchestrationService {
 
   private async performThreatAnalysis(
     context: OrchestrationContext,
-  ): Promise<Record<string, any>> {
-    const results: Record<string, any> = {};
+  ): Promise<Record<string, unknown>> {
+    const results: Record<string, unknown> = {};
 
     // 1. Run entity resolution on key entities
     if ((context.entityIds?.length ?? 0) > 0) {
@@ -182,8 +178,8 @@ export class IntelligenceAIOrchestrationService {
 
   private async performNetworkInvestigation(
     context: OrchestrationContext,
-  ): Promise<Record<string, any>> {
-    const results: Record<string, any> = {};
+  ): Promise<Record<string, unknown>> {
+    const results: Record<string, unknown> = {};
 
     // 1. Path analysis between entities
     if (context.entityIds && context.entityIds.length >= 2) {
@@ -225,8 +221,8 @@ export class IntelligenceAIOrchestrationService {
 
   private async performEntityProfiling(
     context: OrchestrationContext,
-  ): Promise<Record<string, any>> {
-    const results: Record<string, any> = {};
+  ): Promise<Record<string, unknown>> {
+    const results: Record<string, unknown> = {};
 
     if (!context.entityIds?.length) {
       return results;
@@ -265,8 +261,8 @@ export class IntelligenceAIOrchestrationService {
 
   private async performAnomalyHunting(
     context: OrchestrationContext,
-  ): Promise<Record<string, any>> {
-    const results: Record<string, any> = {};
+  ): Promise<Record<string, unknown>> {
+    const results: Record<string, unknown> = {};
 
     // 1. Run advanced anomaly detection
     const anomalies = await this.advanced.detectAnomalies(
@@ -302,8 +298,8 @@ export class IntelligenceAIOrchestrationService {
 
   private async performPredictiveAnalytics(
     context: OrchestrationContext,
-  ): Promise<Record<string, any>> {
-    const results: Record<string, any> = {};
+  ): Promise<Record<string, unknown>> {
+    const results: Record<string, unknown> = {};
 
     // This would integrate with ML models for predictions
     // For now, we'll simulate with existing analytics
@@ -337,8 +333,8 @@ export class IntelligenceAIOrchestrationService {
 
   private async performIncidentResponse(
     context: OrchestrationContext,
-  ): Promise<Record<string, any>> {
-    const results: Record<string, any> = {};
+  ): Promise<Record<string, unknown>> {
+    const results: Record<string, unknown> = {};
 
     // 1. Immediate entity resolution for IOCs (Indicators of Compromise)
     if (context.entityIds && context.entityIds.length) {
@@ -380,8 +376,8 @@ export class IntelligenceAIOrchestrationService {
 
   private async performComplianceCheck(
     context: OrchestrationContext,
-  ): Promise<Record<string, any>> {
-    const results: Record<string, any> = {};
+  ): Promise<Record<string, unknown>> {
+    const results: Record<string, unknown> = {};
 
     // 1. Check entity relationships against compliance rules
     // 2. Run analytics to detect policy violations
@@ -412,22 +408,74 @@ export class IntelligenceAIOrchestrationService {
   }
 
   async getOrchestrationStatus(taskId: string): Promise<OrchestrationResult> {
-    // In a full implementation, this would check the job queue or database
-    // For now, return a placeholder
+    const job = await this.prisma.backgroundJob.findFirst({
+      where: {
+        organizationId: this.principal.organizationId,
+        kind: 'ORCHESTRATION_TASK',
+        payload: { path: ['taskId'], equals: taskId },
+      },
+    });
+    if (!job) {
+      throw new NotFoundException('Orchestration task not found');
+    }
+
     return {
       taskId,
-      status: 'QUEUED',
-      results: {},
-      metadata: { checkedAt: new Date() },
+      status: orchestrationStatusForJob(job.status),
+      results: asRecord(job.result),
+      metadata: {
+        createdAt: job.createdAt.toISOString(),
+        updatedAt: job.updatedAt.toISOString(),
+      },
+      error: job.errorMessage ?? undefined,
     };
   }
 
   async listOrchestrations(
-    organizationId?: string,
     limit = 100,
-  ): Promise<Record<string, any>[]> {
-    // This would query orchestration runs from database
-    // For now, return empty array as placeholder
-    return [];
+  ): Promise<OrchestrationResult[]> {
+    const jobs = await this.prisma.backgroundJob.findMany({
+      where: {
+        organizationId: this.principal.organizationId,
+        kind: 'ORCHESTRATION_TASK',
+      },
+      orderBy: { createdAt: 'desc' },
+      take: Math.min(Math.max(Math.floor(limit), 1), 100),
+    });
+
+    return jobs.flatMap((job) => {
+      const payload = asRecord(job.payload);
+      if (typeof payload.taskId !== 'string') {
+        return [];
+      }
+      return [{
+        taskId: payload.taskId,
+        status: orchestrationStatusForJob(job.status),
+        results: asRecord(job.result),
+        metadata: {
+          createdAt: job.createdAt.toISOString(),
+          updatedAt: job.updatedAt.toISOString(),
+        },
+        error: job.errorMessage ?? undefined,
+      }];
+    });
   }
+}
+
+function orchestrationStatusForJob(status: BackgroundJobStatus): OrchestrationStatus {
+  const statuses: Record<BackgroundJobStatus, OrchestrationStatus> = {
+    QUEUED: 'QUEUED',
+    PROCESSING: 'RUNNING',
+    COMPLETED: 'COMPLETED',
+    FAILED: 'FAILED',
+    CANCELLED: 'CANCELLED',
+  };
+  return statuses[status];
+}
+
+function asRecord(value: unknown): Record<string, unknown> {
+  if (typeof value === 'object' && value !== null && !Array.isArray(value)) {
+    return value as Record<string, unknown>;
+  }
+  return {};
 }

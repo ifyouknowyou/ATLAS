@@ -2,7 +2,7 @@ import { Inject, Injectable, NotFoundException } from '@nestjs/common';
 import { REQUEST } from '@nestjs/core';
 import { PrismaService } from '../prisma/prisma.service';
 import { AuthenticatedRequest } from '../auth/principal';
-import { JobQueueService, BackgroundJobKind } from '../jobs/job-queue.service';
+import { JobQueueService } from '../jobs/job-queue.service';
 import { Prisma } from '@prisma/client';
 
 @Injectable()

@@ -18,12 +18,12 @@ interface TimelinePanelProps {
 export function TimelinePanel({ investigationId, onSelectEvent, selectedEventId }: TimelinePanelProps) {
   const [activeKinds, setActiveKinds] = useState<Set<string>>(new Set());
   const { data, isLoading } = useTimeline({ investigationId, limit: 200 });
-  const items = data?.items ?? [];
 
   const filtered = useMemo(() => {
+    const items = data?.items ?? [];
     if (activeKinds.size === 0) return items;
     return items.filter((e) => activeKinds.has(e.kind));
-  }, [items, activeKinds]);
+  }, [data?.items, activeKinds]);
 
   const toggle = (kind: string) => {
     setActiveKinds((prev) => {

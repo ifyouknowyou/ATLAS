@@ -7,9 +7,9 @@ import { AuthenticatedRequest } from '../auth/principal';
 export class WatchlistsService {
   constructor(private readonly prisma: PrismaService, @Inject(REQUEST) private readonly request: AuthenticatedRequest) {}
 
-  list(organizationId?: string) {
+  list() {
     return this.prisma.watchlist.findMany({
-      where: { organizationId: organizationId ?? this.request.principal.organizationId, isActive: true },
+      where: { organizationId: this.request.principal.organizationId, isActive: true },
     });
   }
 
@@ -25,9 +25,19 @@ export class WatchlistsService {
     });
   }
 
-  items(id: string) {
+  async items(id: string) {
+    const watchlist = await this.prisma.watchlist.findFirst({
+      where: {
+        id,
+        organizationId: this.request.principal.organizationId,
+      },
+      select: { id: true },
+    });
+    if (!watchlist) {
+      throw new NotFoundException('Watchlist not found');
+    }
     return this.prisma.watchlistItem.findMany({
-      where: { watchlistId: id },
+      where: { watchlistId: watchlist.id },
       include: { watchlist: true },
     });
   }

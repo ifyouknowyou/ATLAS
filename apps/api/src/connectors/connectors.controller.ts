@@ -4,7 +4,6 @@ import { RequirePermission } from '../rbac/require-permission.decorator';
 import { PermissionsGuard } from '../rbac/permissions.guard';
 import { AuthGuard } from '../auth/auth.guard';
 import { ConnectorsService } from './connectors.service';
-import { JobsModule } from '../jobs/jobs.module';
 
 @ApiTags('connectors')
 @Controller('connectors')

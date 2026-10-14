@@ -1,12 +1,12 @@
-import { Inject, Injectable, NotFoundException, ForbiddenException } from '@nestjs/common';
+import { Inject, Injectable, NotFoundException } from '@nestjs/common';
 import { REQUEST } from '@nestjs/core';
+import { Prisma } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import { AuthenticatedPrincipal, AuthenticatedRequest } from '../auth/principal';
 import { GraphAnalyticsService } from './graph-analytics.service';
 import { AnomalyDetectionService } from './anomaly-detection.service';
 import { EntityResolutionService } from './entity-resolution.service';
 import { JobQueueService } from '../jobs/job-queue.service';
-import { JsonValue } from '@prisma/client/runtime/library';
 
 export interface TriggerAnalysisDto {
   investigationId?: string;
@@ -18,7 +18,7 @@ export interface TriggerAnalysisDto {
     | 'CHANGE_DETECTION'
     | 'TEMPORAL'
     | 'GEOSPATIAL';
-  params?: any;
+  params?: Prisma.InputJsonValue;
 }
 
 @Injectable()
@@ -55,7 +55,7 @@ export class IntelligenceAnalyticsService {
         organizationId: orgId,
         investigationId: dto.investigationId,
         analysisType: dto.analysisType,
-        parameters: dto.params ?? {} as JsonValue,
+        parameters: dto.params ?? {},
         status: 'QUEUED',
       },
     });

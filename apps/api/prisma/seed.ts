@@ -646,7 +646,6 @@ async function seedPhase5(input: {
   }
 
   // Evidence version + chain-of-custody rows for demo evidence.
-  let evidenceVersions = 0;
   const demoEvidenceRows = await prisma.evidence.findMany({
     where: { organizationId: orgId },
     take: 3,
@@ -682,7 +681,6 @@ async function seedPhase5(input: {
       where: { id: ev.id },
       data: { storageKey: `seed/${ev.id}/v1`, originalFilename: ev.name },
     });
-    evidenceVersions += 1;
   }
 
   // Comments + notifications.

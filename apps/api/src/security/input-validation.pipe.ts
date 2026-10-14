@@ -5,7 +5,7 @@ import { SecurityService } from './security.service';
 export class InputValidationPipe implements PipeTransform {
   constructor(private readonly security: SecurityService) {}
 
-  transform(value: any, metadata: ArgumentMetadata) {
+  transform(value: unknown, _metadata: ArgumentMetadata): unknown {
     // Skip validation for non-string values (like objects, numbers, etc.)
     if (typeof value !== 'string') {
       return value;

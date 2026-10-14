@@ -3,6 +3,7 @@ import type { GraphDelta } from '@atlas/shared';
 import { PrismaService } from '../prisma/prisma.service';
 import { AuthenticatedPrincipal } from '../auth/principal';
 import { RealtimeService } from '../realtime/realtime.service';
+import { RealtimeModule } from '../realtime/realtime.module';
 
 export type ActivityType =
   | 'INVESTIGATION_CREATED'
@@ -155,6 +156,7 @@ export class ActivityService {
 
 @Global()
 @Module({
+  imports: [RealtimeModule],
   providers: [ActivityService],
   exports: [ActivityService],
 })

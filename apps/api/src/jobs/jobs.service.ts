@@ -3,6 +3,7 @@ import { REQUEST } from '@nestjs/core';
 import { PrismaService } from '../prisma/prisma.service';
 import { AuthenticatedRequest } from '../auth/principal';
 import { BackgroundJob, BackgroundJobStatus } from '@prisma/client';
+import { Prisma } from '@prisma/client';
 
 @Injectable()
 export class JobsService {
@@ -20,7 +21,7 @@ export class JobsService {
     offset?: number;
   }): Promise<BackgroundJob[]> {
     const { organizationId, investigationId, status, kind, limit = 100, offset = 0 } = options;
-    const where: any = {
+    const where: Prisma.BackgroundJobWhereInput = {
       organizationId: organizationId ?? this.request.principal.organizationId,
       ...(investigationId ? { investigationId } : {}),
       ...(status ? { status } : {}),
@@ -48,7 +49,7 @@ export class JobsService {
   }
 
   async cancel(id: string): Promise<BackgroundJob> {
-    const job = await this.findOne(id);
+    await this.findOne(id);
     return this.prisma.backgroundJob.update({
       where: { id },
       data: { status: 'CANCELLED' },
