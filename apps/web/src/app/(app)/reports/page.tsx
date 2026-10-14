@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
-import { FileText, Plus } from 'lucide-react';
+import { BarChart3, FileText, Plus, ShieldCheck } from 'lucide-react';
 import { useReports, useReportTemplates, useCreateReportFromTemplate } from '@/lib/queries';
 import { useAuth } from '@/lib/auth-store';
 import { Panel } from '@/components/ui/Panel';
@@ -37,6 +37,8 @@ export default function ReportsPage() {
   const [error, setError] = useState<string | null>(null);
 
   const items = (reports.data?.items ?? []) as ReportItem[];
+  const publishedCount = items.filter((report) => report.status === 'PUBLISHED').length;
+  const restrictedCount = items.filter((report) => ['CONFIDENTIAL', 'RESTRICTED'].includes(report.classification)).length;
 
   const openPicker = () => {
     setTitle('');
@@ -63,6 +65,15 @@ export default function ReportsPage() {
 
   return (
     <div className="space-y-4">
+      <header className="flex flex-wrap items-end justify-between gap-3 border-b border-void-line/70 pb-3">
+        <div><div className="mono-label flex items-center gap-2 text-phosphor"><FileText className="h-3.5 w-3.5" /> DISSEMINATION / DOCUMENT CONTROL</div><h1 className="mt-1 font-mono text-xl tracking-wide text-slate-100">REPORT ARCHIVE</h1></div>
+        <span className="mono-label">{items.length} LOADED · {reports.data?.total ?? items.length} TOTAL</span>
+      </header>
+      <section className="grid gap-3 sm:grid-cols-3">
+        <ReportMetric icon={<FileText className="h-4 w-4" />} label="LOADED REPORTS" value={reports.isLoading ? '—' : items.length} />
+        <ReportMetric icon={<BarChart3 className="h-4 w-4" />} label="PUBLISHED" value={reports.isLoading ? '—' : publishedCount} />
+        <ReportMetric icon={<ShieldCheck className="h-4 w-4" />} label="RESTRICTED CLASSIFICATION" value={reports.isLoading ? '—' : restrictedCount} />
+      </section>
       <Panel
         title="REPORTS"
         actions={
@@ -75,6 +86,8 @@ export default function ReportsPage() {
       >
         {reports.isLoading ? (
           <Spinner label="Loading reports" />
+        ) : reports.isError ? (
+          <p role="alert" className="py-12 text-center font-mono text-xs uppercase tracking-widest text-amber-signal">Report archive unavailable</p>
         ) : items.length === 0 ? (
           <p className="py-12 text-center font-mono text-xs uppercase tracking-widest text-slate-tech/70">
             No reports yet — create one from a template
@@ -125,6 +138,8 @@ export default function ReportsPage() {
               ))}
             </select>
           </Field>
+          {templates.isError && <p role="alert" className="text-xs text-danger">Report templates could not be loaded.</p>}
+          {!templates.isLoading && !templates.isError && !(templates.data as Array<{ id: string }> | undefined)?.length && <p className="text-xs text-amber-signal">No templates are available for this account.</p>}
           {error && (
             <p className="rounded border border-danger/40 bg-danger/10 px-3 py-2 font-mono text-[11px] text-danger">
               {error}
@@ -145,4 +160,8 @@ export default function ReportsPage() {
       </Modal>
     </div>
   );
+}
+
+function ReportMetric({ icon, label, value }: { icon: React.ReactNode; label: string; value: number | string }) {
+  return <div className="panel flex items-center gap-3 p-3"><span className="text-phosphor">{icon}</span><div><div className="mono-label">{label}</div><div className="mt-1 font-mono text-xl text-slate-100">{value}</div></div></div>;
 }

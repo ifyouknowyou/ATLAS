@@ -2,7 +2,7 @@
 
 import { usePathname, useRouter } from 'next/navigation';
 import { useState } from 'react';
-import { Boxes, LogOut, Menu, Search, UserCircle2 } from 'lucide-react';
+import { Command, LogOut, Menu, Search, UserCircle2 } from 'lucide-react';
 import { useAuth } from '@/lib/auth-store';
 import { pageTitleFor } from '@/lib/navigation';
 import { NotificationBell } from '@/components/ui/NotificationBell';
@@ -33,12 +33,12 @@ export function TopBar({ onMenu }: { onMenu?: () => void }) {
         <h1 className="font-mono text-sm tracking-[0.18em] text-slate-200">
           {pageTitleFor(pathname)}
         </h1>
-        <span className="hidden rounded border border-void-line px-1.5 py-0.5 font-mono text-[9px] uppercase tracking-widest text-slate-tech/70 sm:inline">
-          FOUNDATION
+        <span className="hidden rounded border border-phosphor-faint/20 px-1.5 py-0.5 font-mono text-[9px] uppercase tracking-widest text-phosphor-dim sm:inline">
+          INTELLIGENCE OPERATIONS
         </span>
       </div>
 
-      <div className="flex items-center gap-4">
+      <div className="min-w-0 flex items-center gap-2 sm:gap-4">
         <form onSubmit={runSearch} className="relative hidden md:block">
           <Search className="pointer-events-none absolute left-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-slate-tech/60" />
           <input
@@ -49,10 +49,12 @@ export function TopBar({ onMenu }: { onMenu?: () => void }) {
             aria-label="Search ATLAS"
           />
         </form>
-        <span className="hidden items-center gap-2 font-mono text-[11px] text-slate-tech lg:flex">
-          <Boxes className="h-3.5 w-3.5 text-phosphor-dim" />
-          WORKSPACE · {principal?.workspaceId?.slice(0, 8) ?? 'ACTIVE'}
-        </span>
+        <button type="button" onClick={() => router.push('/search')} className="tech-button p-2 md:hidden" aria-label="Open search">
+          <Search className="h-4 w-4" />
+        </button>
+        <button type="button" onClick={() => router.push('/search')} className="hidden items-center gap-2 rounded border border-void-line px-2 py-1.5 font-mono text-[10px] text-slate-tech transition-colors hover:border-phosphor-faint/40 hover:text-slate-100 lg:flex" title="Open global search">
+          <Command className="h-3 w-3" /> SEARCH <kbd className="rounded border border-void-line px-1">/</kbd>
+        </button>
 
         <NotificationBell />
 

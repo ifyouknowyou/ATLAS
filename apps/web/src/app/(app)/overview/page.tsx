@@ -1,6 +1,7 @@
 'use client';
 
 import { useRouter } from 'next/navigation';
+import { useQuery } from '@tanstack/react-query';
 import {
   ArrowRight,
   Bot,
@@ -13,6 +14,7 @@ import {
 } from 'lucide-react';
 import { GlobeViewport } from '@/features/globe/GlobeViewport';
 import { useAuth } from '@/lib/auth-store';
+import { api } from '@/lib/api-client';
 import { useEntities, useInvestigations, useOrganization } from '@/lib/queries';
 import { MetricTile } from '@/components/ui/MetricTile';
 import { Panel } from '@/components/ui/Panel';
@@ -23,9 +25,16 @@ import { statusTone, priorityTone, formatWhen } from '@/lib/presentation';
 export default function OverviewPage() {
   const router = useRouter();
   const principal = useAuth((s) => s.principal);
+  const token = useAuth((s) => s.token);
+  const canReadAlerts = useAuth((s) => s.has('alert.read'));
   const org = useOrganization();
   const investigations = useInvestigations({ limit: 5 });
   const entities = useEntities({ limit: 6 });
+  const alerts = useQuery({
+    queryKey: ['alerts'],
+    queryFn: () => api.get<Array<{ status: string }>>('/alerts', token),
+    enabled: Boolean(token && canReadAlerts),
+  });
 
   const counts = (org.data?._count as
     | Record<string, number>
@@ -72,7 +81,7 @@ export default function OverviewPage() {
         <MetricTile label="INVESTIGATIONS" value={counts.investigations ?? 0} busy={org.isLoading} hint="authorized case files" />
         <MetricTile label="ENTITIES" value={counts.entities ?? 0} busy={org.isLoading} hint="people · infrastructure · orgs" />
         <MetricTile label="SOURCES" value={counts.dataSources ?? counts.sources ?? 0} busy={org.isLoading} hint="connected intelligence feeds" />
-        <MetricTile label="OPERATORS" value={counts.memberships ?? 0} busy={org.isLoading} hint="role-scoped members" />
+        <MetricTile label="ACTIVE ALERTS" value={canReadAlerts ? alerts.data?.filter((alert) => !['DISMISSED', 'RESOLVED'].includes(alert.status)).length ?? '—' : '—'} busy={canReadAlerts && alerts.isLoading} hint={alerts.isError ? 'alert feed unavailable' : 'unresolved signals'} />
       </section>
 
       <section className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_320px]">

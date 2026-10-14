@@ -7,6 +7,8 @@ import { useTimeline } from '@/lib/queries';
 interface TimelineViewportProps {
   investigationId?: string;
   entityId?: string;
+  from?: string;
+  to?: string;
   onSelectEvent?: (eventId: string | null) => void;
   /** Event id currently selected in the list — rendered with emphasis. */
   selectedEventId?: string | null;
@@ -21,8 +23,8 @@ const PAD = 40;
  * Horizontal chronological timeline: density histogram + per-kind lanes.
  * SVG for accessibility and testability (§25-27).
  */
-export function TimelineViewport({ investigationId, entityId, onSelectEvent, selectedEventId }: TimelineViewportProps) {
-  const { data, isLoading, isError } = useTimeline({ investigationId, entityId, limit: 200 });
+export function TimelineViewport({ investigationId, entityId, from, to, onSelectEvent, selectedEventId }: TimelineViewportProps) {
+  const { data, isLoading, isError } = useTimeline({ investigationId, entityId, from, to, limit: 200 });
   const items = data?.items;
 
   const layout = useMemo(() => {
@@ -54,60 +56,74 @@ export function TimelineViewport({ investigationId, entityId, onSelectEvent, sel
   const maxDensity = Math.max(...layout.density.map((d) => d.count), 1);
 
   return (
-    <svg
-      width="100%"
-      viewBox={`0 0 ${WIDTH} ${contentHeight + PAD}`}
-      role="img"
-      aria-label="Investigation timeline"
-      className="select-none"
-    >
-      <g transform={`translate(0, ${PAD})`}>
-        {layout.density.map((bucket, i) => {
-          const x = (i / layout.density.length) * WIDTH;
-          const bw = WIDTH / layout.density.length;
-          const h = (bucket.count / maxDensity) * DENSITY_H;
-          return (
-            <rect
-              key={i}
-              x={x}
-              y={DENSITY_H - h}
-              width={bw - 1}
-              height={h}
-              fill={h > 0 ? '#4fd8c8' : '#12202e'}
-              opacity={0.7}
-            />
-          );
-        })}
-      </g>
-      {layout.kinds.map((kind, i) => {
-        const y = PAD + DENSITY_H + i * LANE_H + LANE_H / 2;
-        return (
-          <g key={kind}>
-            <text x={4} y={y + 3} fontSize={9} fill="#8aa3c2" fontFamily="monospace">
-              {kind}
-            </text>
-            {layout.byKind.get(kind)!.map((e) => {
-              const x = xForTime(new Date(e.occurredAt).getTime(), layout.bounds, WIDTH);
-              const selected = e.id === selectedEventId;
+    <div className="relative overflow-hidden rounded border border-void-line/60 bg-[#07111c] p-3 [perspective:1200px]">
+      <div className="absolute inset-0 opacity-30" style={{ backgroundImage: 'linear-gradient(rgba(79,216,200,.1) 1px, transparent 1px), linear-gradient(90deg, rgba(79,216,200,.1) 1px, transparent 1px)', backgroundSize: '36px 36px' }} />
+      <div className="relative origin-top [transform:rotateX(8deg)]">
+        <svg
+          width="100%"
+          viewBox={`0 0 ${WIDTH} ${contentHeight + PAD}`}
+          role="img"
+          aria-label="Investigation timeline"
+          className="select-none"
+        >
+          <g transform={`translate(0, ${PAD})`}>
+            {layout.density.map((bucket, i) => {
+              const x = (i / layout.density.length) * WIDTH;
+              const bw = WIDTH / layout.density.length;
+              const h = (bucket.count / maxDensity) * DENSITY_H;
               return (
-                <circle
-                  key={e.id}
-                  cx={x}
-                  cy={y}
-                  r={selected ? 6 : 4}
-                  fill={selected ? '#e8b64c' : kindColor(e.kind)}
-                  stroke={selected ? '#f4f8ff' : '#04070c'}
-                  strokeWidth={selected ? 1.5 : 1}
-                  onClick={() => onSelectEvent?.(e.id)}
-                  className="cursor-pointer"
-                >
-                  <title>{`${e.title} · ${e.kind}`}</title>
-                </circle>
+                <rect
+                  key={i}
+                  x={x}
+                  y={DENSITY_H - h}
+                  width={bw - 1}
+                  height={h}
+                  fill={h > 0 ? '#4fd8c8' : '#12202e'}
+                  opacity={0.7}
+                />
               );
             })}
           </g>
-        );
-      })}
-    </svg>
+          {layout.kinds.map((kind, i) => {
+            const y = PAD + DENSITY_H + i * LANE_H + LANE_H / 2;
+            return (
+              <g key={kind}>
+                <text x={4} y={y + 3} fontSize={9} fill="#8aa3c2" fontFamily="monospace">
+                  {kind}
+                </text>
+                {layout.byKind.get(kind)!.map((e) => {
+                  const x = xForTime(new Date(e.occurredAt).getTime(), layout.bounds, WIDTH);
+                  const selected = e.id === selectedEventId;
+                  return (
+                    <circle
+                      key={e.id}
+                      cx={x}
+                      cy={y}
+                      r={selected ? 6 : 4}
+                      fill={selected ? '#e8b64c' : kindColor(e.kind)}
+                      stroke={selected ? '#f4f8ff' : '#04070c'}
+                      strokeWidth={selected ? 1.5 : 1}
+                      onClick={() => onSelectEvent?.(e.id)}
+                      className="cursor-pointer"
+                      tabIndex={0}
+                      role="button"
+                      aria-label={`${e.title} · ${e.kind}`}
+                      onKeyDown={(event) => {
+                        if (event.key === 'Enter' || event.key === ' ') {
+                          event.preventDefault();
+                          onSelectEvent?.(e.id);
+                        }
+                      }}
+                    >
+                      <title>{`${e.title} · ${e.kind}`}</title>
+                    </circle>
+                  );
+                })}
+              </g>
+            );
+          })}
+        </svg>
+      </div>
+    </div>
   );
 }

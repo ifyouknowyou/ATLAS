@@ -19,11 +19,13 @@ export function InvestigationGraph({
   edges,
   className,
   entityHref,
+  onSelectNode,
 }: {
   nodes: GraphNode[];
   edges: GraphEdge[];
   className?: string;
   entityHref?: (id: string) => string;
+  onSelectNode?: (id: string | null) => void;
 }) {
   const selectedId = useGraph((s) => s.selectedId);
   const setSelected = useGraph((s) => s.setSelected);
@@ -39,10 +41,10 @@ export function InvestigationGraph({
     <div className={cn('relative h-full w-full overflow-hidden rounded-lg border border-void-line bg-radial-void', className)}>
       {webgl ? (
         <Canvas camera={{ position: [0, 0, 8], fov: 45 }} dpr={[1, 2]}>
-          <GraphScene nodeInputs={nodes} edgeInputs={edges} />
+          <GraphScene nodeInputs={nodes} edgeInputs={edges} onSelectNode={onSelectNode} />
         </Canvas>
       ) : (
-        <SvgGraph nodes={nodes} edges={edges} onSelect={setSelected} />
+        <SvgGraph nodes={nodes} edges={edges} onSelect={(id) => { setSelected(id); onSelectNode?.(id); }} />
       )}
 
       <div className="pointer-events-none absolute left-4 top-4 flex items-center gap-2">

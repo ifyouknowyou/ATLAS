@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
-import { Search } from 'lucide-react';
+import { Archive, Search, ShieldCheck } from 'lucide-react';
 import { useEvidence } from '@/lib/queries';
 import { useAuth } from '@/lib/auth-store';
 import { Panel } from '@/components/ui/Panel';
@@ -49,10 +49,21 @@ export default function EvidenceVaultPage() {
 
   const items = (query.data?.items ?? []) as unknown as EvidenceItem[];
   const total = query.data?.total ?? 0;
+  const verifiedCount = items.filter((item) => item.processingStatus === 'COMPLETED').length;
+  const restrictedCount = items.filter((item) => ['CONFIDENTIAL', 'RESTRICTED'].includes(item.classification)).length;
 
   return (
     <div className="space-y-4">
-      <Panel title="EVIDENCE VAULT" actions={<span className="mono-label">{total} RECORDS</span>}>
+      <header className="flex flex-wrap items-end justify-between gap-3 border-b border-void-line/70 pb-3">
+        <div><div className="mono-label flex items-center gap-2 text-phosphor"><Archive className="h-3.5 w-3.5" /> PROVENANCE / CHAIN OF CUSTODY</div><h1 className="mt-1 font-mono text-xl tracking-wide text-slate-100">EVIDENCE ARCHIVE</h1></div>
+        <span className="mono-label">{total} MATCHING RECORDS</span>
+      </header>
+      <section className="grid gap-3 sm:grid-cols-3">
+        <EvidenceMetric icon={<Archive className="h-4 w-4" />} label="MATCHING RECORDS" value={query.isLoading ? '—' : total} />
+        <EvidenceMetric icon={<ShieldCheck className="h-4 w-4" />} label="INTEGRITY PROCESSED · PAGE" value={query.isLoading ? '—' : verifiedCount} />
+        <EvidenceMetric icon={<ShieldCheck className="h-4 w-4" />} label="RESTRICTED · PAGE" value={query.isLoading ? '—' : restrictedCount} />
+      </section>
+      <Panel title="INTAKE & FILTERS">
         {has('evidence.create') && (
           <EvidenceDropzone
             onUploaded={() => {
@@ -91,9 +102,23 @@ export default function EvidenceVaultPage() {
         </div>
       </Panel>
 
-      <Panel title="ALL EVIDENCE">
+      {!query.isLoading && items.length > 0 && <section className="panel relative overflow-hidden p-4 [perspective:1200px]">
+        <div className="absolute inset-0 opacity-45" style={{ backgroundImage: 'radial-gradient(ellipse at 50% 0%, rgba(121,184,255,.12), transparent 58%), linear-gradient(rgba(121,184,255,.055) 1px, transparent 1px), linear-gradient(90deg, rgba(121,184,255,.055) 1px, transparent 1px)', backgroundSize: 'auto, 34px 34px, 34px 34px' }} />
+        <div className="relative flex flex-wrap items-end justify-between gap-2"><div><div className="mono-label text-sky-300">EVIDENCE VAULT · PERSPECTIVE INDEX</div><h2 className="mt-1 font-mono text-xs tracking-widest text-slate-100">CHAIN-OF-CUSTODY RECORDS</h2></div><span className="mono-label">{Math.min(items.length, 8)} VISIBLE · FILTERED PAGE</span></div>
+        <div className="relative mt-4 grid gap-2 sm:grid-cols-2 xl:grid-cols-4 [transform:perspective(1200px)_rotateX(7deg)]">
+          {items.slice(0, 8).map((item, index) => <Link key={item.id} href={`/evidence/${item.id}`} className="group min-w-0 rounded border border-sky-300/20 bg-[#091522]/90 p-3 shadow-[0_10px_25px_rgba(0,0,0,.24)] transition-colors hover:border-sky-300/60 hover:bg-sky-300/5" style={{ transform: `translateY(${(index % 2) * 5}px)` }}>
+            <div className="flex items-center justify-between gap-2"><StatusBadge tone="neutral">{item.kind}</StatusBadge><StatusBadge tone={item.status === 'AVAILABLE' ? 'signal' : item.status === 'RESTRICTED' ? 'danger' : 'amber'}>{item.status}</StatusBadge></div>
+            <div className="mt-2 truncate font-mono text-xs text-slate-100 group-hover:text-sky-200">{item.name}</div>
+            <div className="mt-2 flex items-center justify-between gap-2"><ClassificationBadge classification={item.classification} /><span className="truncate font-mono text-[9px] text-slate-tech">{item.hash ? `${item.hash.slice(0, 10)}…` : item.processingStatus ?? 'HASH UNAVAILABLE'}</span></div>
+          </Link>)}
+        </div>
+      </section>}
+
+      <Panel title="EVIDENCE MANIFEST" actions={<span className="mono-label">{items.length} OF {total} LOADED</span>}>
         {query.isLoading ? (
           <Spinner label="Reading evidence vault" />
+        ) : query.isError ? (
+          <p role="alert" className="py-12 text-center font-mono text-xs uppercase tracking-widest text-amber-signal">Evidence archive unavailable</p>
         ) : items.length === 0 ? (
           <p className="py-12 text-center font-mono text-xs uppercase tracking-widest text-slate-tech/70">
             No evidence matches the current filters
@@ -160,4 +185,8 @@ export default function EvidenceVaultPage() {
       </Panel>
     </div>
   );
+}
+
+function EvidenceMetric({ icon, label, value }: { icon: React.ReactNode; label: string; value: number | string }) {
+  return <div className="panel flex items-center gap-3 p-3"><span className="text-phosphor">{icon}</span><div><div className="mono-label">{label}</div><div className="mt-1 font-mono text-xl text-slate-100">{value}</div></div></div>;
 }

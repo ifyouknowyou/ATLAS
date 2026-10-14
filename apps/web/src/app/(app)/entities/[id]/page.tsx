@@ -120,6 +120,7 @@ function EntityProfile({ id }: { id: string }) {
 
         {/* Relationships */}
         <Panel title="RELATIONSHIPS" className="lg:col-span-2">
+          {relationships.length > 0 && <RelationshipConstellation entityId={entity.id} name={entity.displayName ?? entity.name} relationships={relationships} />}
           {relationships.length === 0 ? (
             <p className="py-6 text-center font-mono text-xs uppercase tracking-widest text-slate-tech/70">
               No relationships recorded
@@ -181,6 +182,35 @@ function EntityProfile({ id }: { id: string }) {
       </div>
     </div>
   );
+}
+
+function RelationshipConstellation({ entityId, name, relationships }: {
+  entityId: string;
+  name: string;
+  relationships: Array<Record<string, unknown>>;
+}) {
+  const endpoints = relationships.flatMap((relationship) => {
+    const source = relationship.source as { id: string; name: string } | undefined;
+    const target = relationship.target as { id: string; name: string } | undefined;
+    if (!source || !target) return [];
+    return [source.id === entityId ? target : source];
+  }).filter((endpoint, index, all) => all.findIndex((item) => item.id === endpoint.id) === index).slice(0, 12);
+  const center = { x: 200, y: 100 };
+  const points = endpoints.map((endpoint, index) => {
+    const angle = (Math.PI * 2 * index) / Math.max(1, endpoints.length) - Math.PI / 2;
+    return { ...endpoint, x: center.x + Math.cos(angle) * 150, y: center.y + Math.sin(angle) * 65 };
+  });
+  return <div className="mb-3 overflow-hidden rounded border border-void-line/60 bg-[#07111c]">
+    <svg viewBox="0 0 400 200" className="h-48 w-full" role="img" aria-label={`Relationship constellation for ${name}`}>
+      {points.map((point) => <line key={`line-${point.id}`} x1={center.x} y1={center.y} x2={point.x} y2={point.y} stroke="#4fd8c8" strokeOpacity=".38" />)}
+      {points.map((point) => <g key={point.id}>
+        <circle cx={point.x} cy={point.y} r="5" fill="#4fd8c8" />
+        <text x={point.x} y={point.y + 15} textAnchor="middle" fill="#8aa3c2" fontSize="9" fontFamily="monospace">{point.name.length > 20 ? `${point.name.slice(0, 18)}…` : point.name}</text>
+      </g>)}
+      <circle cx={center.x} cy={center.y} r="10" fill="#e8b64c" />
+      <text x={center.x} y={center.y - 16} textAnchor="middle" fill="#f4f8ff" fontSize="10" fontFamily="monospace">{name.length > 24 ? `${name.slice(0, 22)}…` : name}</text>
+    </svg>
+  </div>;
 }
 
 function Attribute({ label, value }: { label: string; value: string }) {

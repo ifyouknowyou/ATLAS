@@ -9,15 +9,17 @@ import { formatWhen } from '@/lib/presentation';
 
 interface TimelinePanelProps {
   investigationId?: string;
+  from?: string;
+  to?: string;
   onSelectEvent?: (eventId: string | null) => void;
   /** Event id currently selected in the viewport — rendered with emphasis. */
   selectedEventId?: string | null;
 }
 
 /** Timeline filters + event detail list (§26/§27). */
-export function TimelinePanel({ investigationId, onSelectEvent, selectedEventId }: TimelinePanelProps) {
+export function TimelinePanel({ investigationId, from, to, onSelectEvent, selectedEventId }: TimelinePanelProps) {
   const [activeKinds, setActiveKinds] = useState<Set<string>>(new Set());
-  const { data, isLoading } = useTimeline({ investigationId, limit: 200 });
+  const { data, isLoading, isError } = useTimeline({ investigationId, from, to, limit: 200 });
 
   const filtered = useMemo(() => {
     const items = data?.items ?? [];
@@ -40,6 +42,8 @@ export function TimelinePanel({ investigationId, onSelectEvent, selectedEventId 
         {TIMELINE_EVENT_KINDS.map((kind) => (
           <button
             key={kind}
+            type="button"
+            aria-pressed={activeKinds.has(kind)}
             onClick={() => toggle(kind)}
             className={`mono-label rounded border px-1.5 py-0.5 text-[9px] ${
               activeKinds.has(kind)
@@ -54,7 +58,8 @@ export function TimelinePanel({ investigationId, onSelectEvent, selectedEventId 
 
       <div className="max-h-96 space-y-1 overflow-auto pr-1">
         {isLoading && <p className="font-mono text-[11px] text-slate-tech">LOADING</p>}
-        {!isLoading && filtered.length === 0 && (
+        {isError && <p className="font-mono text-[11px] text-amber-signal">TIMELINE UNAVAILABLE</p>}
+        {!isLoading && !isError && filtered.length === 0 && (
           <p className="font-mono text-[11px] text-slate-tech">NO EVENTS</p>
         )}
         {filtered.map((e) => (

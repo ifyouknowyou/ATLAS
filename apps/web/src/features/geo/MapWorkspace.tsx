@@ -6,20 +6,22 @@ import { useArcs, useLocations } from '@/lib/queries';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { Spinner } from '@/components/ui/Spinner';
 import { cn } from '@/lib/cn';
+import { GlobeViewport } from '@/features/globe/GlobeViewport';
+import { useGlobe } from '@/features/globe/hooks/useGlobeState';
 
 const WORLD = { minLat: -60, maxLat: 80, minLng: -180, maxLng: 180 };
 
 export function MapWorkspace() {
   const locations = useLocations({ limit: 500 });
   const arcs = useArcs();
-  const [selectedId, setSelectedId] = useState<string | null>(null);
+  const selectedId = useGlobe((state) => state.selectedId);
+  const setSelectedId = useGlobe((state) => state.setSelected);
+  const [view, setView] = useState<'map' | 'globe'>('map');
   const selected = locations.data?.find((node) => node.id === selectedId) ?? null;
 
   const projected = useMemo(
-    () => (locations.data ?? []).map((node) => ({
+    () => (locations.data ?? []).filter(hasCoordinates).map((node) => ({
       ...node,
-      latitude: node.latitude ?? 0,
-      longitude: node.longitude ?? 0,
       point: project(node.latitude, node.longitude),
     })),
     [locations.data],
@@ -27,7 +29,7 @@ export function MapWorkspace() {
 
   if (locations.isLoading) return <Spinner label="Surveying geospatial intelligence" />;
   if (locations.isError) return <EmptyState title="MAP OFFLINE" detail="Geospatial data could not be loaded. Retry the route to reconnect." />;
-  if (!locations.data?.length) {
+  if (!projected.length) {
     return <EmptyState title="NO GEOLOCATED ENTITIES" detail="Entities with coordinates will appear here when available." />;
   }
 
@@ -39,15 +41,22 @@ export function MapWorkspace() {
           <h1 className="mt-2 font-mono text-2xl tracking-wide text-slate-100">GEOSPATIAL COMMAND</h1>
           <p className="mt-1 max-w-2xl text-sm text-slate-tech">Coordinate-aware entities and relationships rendered from the authorized ATLAS data layer.</p>
         </div>
-        <div className="flex items-center gap-2 font-mono text-[10px] uppercase tracking-widest text-slate-tech">
-          <span className="text-phosphor">{locations.data.length}</span> LOCATIONS
-          <span className="text-void-line">·</span>
-          <span className="text-phosphor">{arcs.data?.length ?? 0}</span> ARCS
+        <div className="flex flex-wrap items-center gap-3">
+          <div className="flex rounded border border-void-line p-0.5" role="group" aria-label="Map visualization">
+            <button type="button" aria-pressed={view === 'map'} onClick={() => setView('map')} className={cn('rounded px-2.5 py-1.5 font-mono text-[9px] tracking-widest', view === 'map' ? 'bg-phosphor-dim/15 text-phosphor' : 'text-slate-tech hover:text-slate-100')}>2D MAP</button>
+            <button type="button" aria-pressed={view === 'globe'} onClick={() => setView('globe')} className={cn('rounded px-2.5 py-1.5 font-mono text-[9px] tracking-widest', view === 'globe' ? 'bg-phosphor-dim/15 text-phosphor' : 'text-slate-tech hover:text-slate-100')}>3D GLOBE</button>
+          </div>
+          <div className="flex items-center gap-2 font-mono text-[10px] uppercase tracking-widest text-slate-tech">
+            <span className="text-phosphor">{projected.length}</span> LOCATIONS
+            <span className="text-void-line">·</span>
+            <span className="text-phosphor">{arcs.data?.length ?? 0}</span> ARCS
+          </div>
         </div>
       </header>
 
       <section className="grid gap-4 xl:grid-cols-[1fr_280px]">
         <div className="atlas-scene relative min-h-[580px] overflow-hidden rounded-lg border border-void-line bg-[#07111c]">
+          {view === 'globe' ? <GlobeViewport className="absolute inset-0 min-h-[580px] rounded-none border-0" /> : <>
           <div className="absolute inset-0 opacity-40" style={{ backgroundImage: 'linear-gradient(rgba(79,216,200,.12) 1px, transparent 1px), linear-gradient(90deg, rgba(79,216,200,.12) 1px, transparent 1px)', backgroundSize: '48px 48px' }} />
           <div className="absolute inset-[8%] rounded-[50%] border border-phosphor-faint/30 shadow-[0_0_80px_rgba(79,216,200,.08),inset_0_0_80px_rgba(79,216,200,.06)]" />
           <div className="absolute inset-x-[8%] top-1/2 border-t border-phosphor-faint/20" />
@@ -72,6 +81,7 @@ export function MapWorkspace() {
             ))}
           </svg>
           <div className="absolute bottom-4 left-4 flex items-center gap-4 font-mono text-[9px] uppercase tracking-widest text-slate-tech/70"><span className="flex items-center gap-1.5"><span className="h-2 w-2 rounded-full bg-phosphor" /> ENTITY</span><span className="flex items-center gap-1.5"><span className="h-px w-4 bg-phosphor" /> RELATIONSHIP ARC</span></div>
+          </>}
         </div>
 
         <aside className="panel flex flex-col p-4">
@@ -90,4 +100,10 @@ function project(latitude: number | null | undefined, longitude: number | null |
   const lat = latitude ?? 0;
   const lng = longitude ?? 0;
   return { x: ((lng - WORLD.minLng) / (WORLD.maxLng - WORLD.minLng)) * 1000, y: ((WORLD.maxLat - lat) / (WORLD.maxLat - WORLD.minLat)) * 560 };
+}
+
+function hasCoordinates<T extends { latitude?: number | null; longitude?: number | null }>(
+  node: T,
+): node is T & { latitude: number; longitude: number } {
+  return typeof node.latitude === 'number' && typeof node.longitude === 'number';
 }

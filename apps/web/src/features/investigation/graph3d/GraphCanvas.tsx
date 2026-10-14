@@ -28,9 +28,10 @@ interface SceneInput {
     kind: string;
     confidence: number;
   }>;
+  onSelectNode?: (id: string | null) => void;
 }
 
-export function GraphScene({ nodeInputs, edgeInputs }: SceneInput) {
+export function GraphScene({ nodeInputs, edgeInputs, onSelectNode }: SceneInput) {
   const controls = useRef<OrbitControlsImpl>(null);
   const look = useRef(new THREE.Vector3(0, 0, 0));
   const selectedId = useGraph((s) => s.selectedId);
@@ -82,7 +83,9 @@ export function GraphScene({ nodeInputs, edgeInputs }: SceneInput) {
             scale={selected ? nodeScale(node.confidence) * 1.7 : nodeScale(node.confidence) * 1.4}
             onClick={(event) => {
               event.stopPropagation();
-              setSelected(selected ? null : node.id);
+              const nextId = selected ? null : node.id;
+              setSelected(nextId);
+              onSelectNode?.(nextId);
             }}
             onPointerOver={(event) => {
               event.stopPropagation();
