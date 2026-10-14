@@ -9,6 +9,8 @@ import { StatusBadge } from '@/components/ui/StatusBadge';
 import { useAuth } from '@/lib/auth-store';
 import { api } from '@/lib/api-client';
 import { formatWhen } from '@/lib/presentation';
+import { AtlasScene } from '@/features/scenes/AtlasScene';
+import { useEntities } from '@/lib/queries';
 
 type AlertRow = { id: string; title: string; severity: string; status: string; createdAt: string };
 type AnalysisRow = { id: string; analysisType: string; status: string; createdAt: string };
@@ -34,8 +36,19 @@ export default function IntelligenceOperationsPage() {
     queryFn: () => api.get<WorkflowRow[]>('/workflows', token),
     enabled: Boolean(token && canReadWorkflows),
   });
+  const entities = useEntities({ limit: 80 });
   const activeAlerts = (alerts.data ?? []).filter((alert) => !['DISMISSED', 'RESOLVED'].includes(alert.status));
   const recentAnalysis = analyses.data?.slice(0, 5) ?? [];
+  const entityRecords = (entities.data?.items ?? []).map((entity) => ({
+    id: String(entity.id),
+    label: String(entity.name ?? entity.displayName ?? 'Unnamed entity'),
+    category: String(entity.type ?? 'UNKNOWN'),
+    status: String(entity.status ?? ''),
+  }));
+  const entityCategories = entityRecords.reduce<Record<string, number>>((counts, entity) => {
+    counts[entity.category] = (counts[entity.category] ?? 0) + 1;
+    return counts;
+  }, {});
 
   return <div className="space-y-4">
     <header className="flex flex-wrap items-end justify-between gap-3 border-b border-void-line/70 pb-3">
@@ -46,7 +59,16 @@ export default function IntelligenceOperationsPage() {
     <section className="grid gap-3 sm:grid-cols-3">
       <SummaryCard href={canReadAlerts ? '/intelligence/alerts' : undefined} icon={<AlertTriangle className="h-4 w-4" />} title="ALERTS" count={canReadAlerts ? alerts.data ? String(activeAlerts.length) : alerts.isLoading ? '—' : 'UNAVAILABLE' : 'RESTRICTED'} detail={alerts.isError ? 'Alert feed unavailable' : 'Unresolved signals'} tone="amber" />
       <SummaryCard href={canReadAnalytics ? '/intelligence/analytics' : undefined} icon={<BarChart3 className="h-4 w-4" />} title="ANALYTICS" count={canReadAnalytics ? analyses.data ? String(analyses.data.length) : analyses.isLoading ? '—' : 'UNAVAILABLE' : 'RESTRICTED'} detail="Recorded analysis runs" />
-      <SummaryCard href={canReadWorkflows ? '/intelligence/workflows' : undefined} icon={<Workflow className="h-4 w-4" />} title="WORKFLOWS" count={canReadWorkflows ? workflows.data ? String(workflows.data.length) : workflows.isLoading ? '—' : 'UNAVAILABLE' : 'RESTRICTED'} detail="Published automations" />
+      <SummaryCard href={canReadWorkflows ? '/intelligence/workflows' : undefined} icon={<Workflow className="h-4 w-4" />} title="WORKFLOWS" count={canReadWorkflows ? workflows.data ? String(workflows.data.filter((workflow) => workflow.isPublished).length) : workflows.isLoading ? '—' : 'UNAVAILABLE' : 'RESTRICTED'} detail="Published automations" />
+    </section>
+
+    <section className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_260px]">
+      <Panel title="INTELLIGENCE ORBITAL FIELD" actions={<span className="mono-label">{entityRecords.length} LOADED ENTITIES</span>}>
+        <AtlasScene kind="cylinder" records={entityRecords} className="h-[360px]" />
+      </Panel>
+      <Panel title="ENTITY CATEGORIES">
+        {entities.isLoading ? <Spinner label="Loading entity categories" /> : entities.isError ? <p role="status" className="py-6 text-center font-mono text-xs text-amber-signal">ENTITY DATA UNAVAILABLE</p> : Object.keys(entityCategories).length === 0 ? <p className="py-6 text-center font-mono text-xs text-slate-tech">NO ENTITY CATEGORIES</p> : <div className="space-y-2">{Object.entries(entityCategories).sort((a, b) => b[1] - a[1]).map(([category, count]) => <div key={category} className="flex items-center justify-between border-b border-void-line/50 pb-2"><span className="font-mono text-[10px] text-slate-tech">{category}</span><span className="font-mono text-sm text-slate-100">{count}</span></div>)}</div>}
+      </Panel>
     </section>
 
     <section className="grid gap-4 xl:grid-cols-[minmax(0,1.3fr)_minmax(280px,.7fr)]">

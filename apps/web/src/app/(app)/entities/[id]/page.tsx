@@ -8,6 +8,7 @@ import { Panel } from '@/components/ui/Panel';
 import { Spinner } from '@/components/ui/Spinner';
 import { StatusBadge } from '@/components/ui/StatusBadge';
 import { confidenceLabel, formatWhen } from '@/lib/presentation';
+import { AtlasScene } from '@/features/scenes/AtlasScene';
 
 export default function EntityProfilePage({
   params,
@@ -195,21 +196,21 @@ function RelationshipConstellation({ entityId, name, relationships }: {
     if (!source || !target) return [];
     return [source.id === entityId ? target : source];
   }).filter((endpoint, index, all) => all.findIndex((item) => item.id === endpoint.id) === index).slice(0, 12);
-  const center = { x: 200, y: 100 };
-  const points = endpoints.map((endpoint, index) => {
-    const angle = (Math.PI * 2 * index) / Math.max(1, endpoints.length) - Math.PI / 2;
-    return { ...endpoint, x: center.x + Math.cos(angle) * 150, y: center.y + Math.sin(angle) * 65 };
-  });
-  return <div className="mb-3 overflow-hidden rounded border border-void-line/60 bg-[#07111c]">
-    <svg viewBox="0 0 400 200" className="h-48 w-full" role="img" aria-label={`Relationship constellation for ${name}`}>
-      {points.map((point) => <line key={`line-${point.id}`} x1={center.x} y1={center.y} x2={point.x} y2={point.y} stroke="#4fd8c8" strokeOpacity=".38" />)}
-      {points.map((point) => <g key={point.id}>
-        <circle cx={point.x} cy={point.y} r="5" fill="#4fd8c8" />
-        <text x={point.x} y={point.y + 15} textAnchor="middle" fill="#8aa3c2" fontSize="9" fontFamily="monospace">{point.name.length > 20 ? `${point.name.slice(0, 18)}…` : point.name}</text>
-      </g>)}
-      <circle cx={center.x} cy={center.y} r="10" fill="#e8b64c" />
-      <text x={center.x} y={center.y - 16} textAnchor="middle" fill="#f4f8ff" fontSize="10" fontFamily="monospace">{name.length > 24 ? `${name.slice(0, 22)}…` : name}</text>
-    </svg>
+  return <div className="mb-3">
+    <div className="mb-2 mono-label" aria-label={`Relationship constellation centered on ${name}`}>FOCUS · {name}</div>
+    <AtlasScene
+      kind="constellation"
+      records={endpoints.map((endpoint) => ({
+        id: endpoint.id,
+        label: endpoint.name,
+        category: String(relationships.find((relationship) => {
+          const source = relationship.source as { id: string } | undefined;
+          const target = relationship.target as { id: string } | undefined;
+          return source?.id === endpoint.id || target?.id === endpoint.id;
+        })?.kind ?? 'RELATED ENTITY'),
+      }))}
+      className="h-60"
+    />
   </div>;
 }
 

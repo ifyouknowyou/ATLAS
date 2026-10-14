@@ -13,6 +13,7 @@ import { Spinner } from '@/components/ui/Spinner';
 import { StatusBadge } from '@/components/ui/StatusBadge';
 import { ClassificationBadge } from '@/components/ui/ClassificationBadge';
 import { ApiError } from '@/lib/api-client';
+import { AtlasScene } from '@/features/scenes/AtlasScene';
 
 interface ReportItem {
   id: string;
@@ -39,6 +40,10 @@ export default function ReportsPage() {
   const items = (reports.data?.items ?? []) as ReportItem[];
   const publishedCount = items.filter((report) => report.status === 'PUBLISHED').length;
   const restrictedCount = items.filter((report) => ['CONFIDENTIAL', 'RESTRICTED'].includes(report.classification)).length;
+  const statusCounts = items.reduce<Record<string, number>>((counts, report) => {
+    counts[report.status] = (counts[report.status] ?? 0) + 1;
+    return counts;
+  }, {});
 
   const openPicker = () => {
     setTitle('');
@@ -74,6 +79,13 @@ export default function ReportsPage() {
         <ReportMetric icon={<BarChart3 className="h-4 w-4" />} label="PUBLISHED" value={reports.isLoading ? '—' : publishedCount} />
         <ReportMetric icon={<ShieldCheck className="h-4 w-4" />} label="RESTRICTED CLASSIFICATION" value={reports.isLoading ? '—' : restrictedCount} />
       </section>
+      {!reports.isLoading && !reports.isError && items.length > 0 && <Panel title="REPORT STATUS ANALYTICS" actions={<span className="mono-label">LIVE REPORT RECORDS</span>}>
+        <AtlasScene
+          kind="columns"
+          records={Object.entries(statusCounts).map(([status, value]) => ({ id: status, label: status, category: 'REPORT STATUS', value, status }))}
+          className="h-[340px]"
+        />
+      </Panel>}
       <Panel
         title="REPORTS"
         actions={

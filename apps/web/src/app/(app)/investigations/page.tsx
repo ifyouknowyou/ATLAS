@@ -27,6 +27,7 @@ import {
 } from '@/lib/presentation';
 import { cn } from '@/lib/cn';
 import { CreateInvestigationDialog } from '@/components/investigations/CreateInvestigationDialog';
+import { AtlasScene } from '@/features/scenes/AtlasScene';
 
 const STATUSES = ['DRAFT', 'ACTIVE', 'PAUSED', 'COMPLETED', 'ARCHIVED'];
 const PRIORITIES = ['LOW', 'MEDIUM', 'HIGH', 'CRITICAL'];
@@ -165,19 +166,17 @@ export default function InvestigationsPage() {
       )}
 
       {!query.isLoading && items.length > 0 && !archived && (
-        <section className="panel relative overflow-hidden p-4 [perspective:1100px]">
-          <div className="absolute inset-0 opacity-50" style={{ backgroundImage: 'radial-gradient(ellipse at 50% 0%, rgba(79,216,200,.12), transparent 60%), linear-gradient(rgba(79,216,200,.06) 1px, transparent 1px), linear-gradient(90deg, rgba(79,216,200,.06) 1px, transparent 1px)', backgroundSize: 'auto, 32px 32px, 32px 32px' }} />
-          <div className="relative flex flex-wrap items-end justify-between gap-2">
+        <section className="panel p-4">
+          <div className="mb-3 flex flex-wrap items-end justify-between gap-2">
             <div><div className="mono-label text-phosphor">INVESTIGATION TERRAIN</div><h2 className="mt-1 font-mono text-xs tracking-widest text-slate-100">CASE LANDSCAPE · AUTHORIZED RECORDS</h2></div>
-            <span className="mono-label">{Math.min(items.length, 8)} VISIBLE / {total} MATCHES</span>
+            <span className="mono-label">{Math.min(items.length, 80)} VISIBLE / {total} MATCHES</span>
           </div>
-          <div className="relative mt-4 grid gap-2 sm:grid-cols-2 xl:grid-cols-4 [transform:perspective(1100px)_rotateX(8deg)]">
-            {items.slice(0, 8).map((item, index) => <button key={item.id} type="button" onClick={() => openCase(item.id)} className="group min-w-0 rounded border border-phosphor-faint/20 bg-[#091522]/90 p-3 text-left shadow-[0_10px_25px_rgba(0,0,0,.24)] transition-colors hover:border-phosphor-faint/60 hover:bg-phosphor-dim/10" style={{ transform: `translateY(${(index % 2) * 5}px)` }}>
-              <div className="flex items-center justify-between gap-2"><span className="mono-label text-phosphor">{item.priority}</span><span className="font-mono text-[9px] text-slate-tech">{formatWhen(item.updatedAt)}</span></div>
-              <div className="mt-2 truncate font-mono text-xs text-slate-100 group-hover:text-phosphor">{item.title}</div>
-              <div className="mt-2 flex items-center gap-2"><StatusBadge tone={statusTone(item.status)}>{item.status}</StatusBadge><span className="font-mono text-[9px] text-slate-tech">E{item._count?.entities ?? 0} · T{item._count?.tasks ?? 0}</span></div>
-            </button>)}
-          </div>
+          <AtlasScene
+            kind="terrain"
+            records={items.map((item) => ({ id: item.id, label: item.title, category: item.priority, status: item.status }))}
+            className="h-[400px]"
+            onSelect={(record) => openCase(record.id)}
+          />
         </section>
       )}
 

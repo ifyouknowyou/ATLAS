@@ -9,7 +9,7 @@ import {
 } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { randomUUID } from 'node:crypto';
-import { Observable } from 'rxjs';
+import { Observable, Subscription } from 'rxjs';
 import { SseTicketPayload } from '@atlas/shared';
 import { PrismaService } from '../prisma/prisma.service';
 import { buildPrincipal } from '../auth/principal.builder';
@@ -66,23 +66,32 @@ export class RealtimeController {
     // Defer auth work to the Observable creation so the @Sse route is valid
     // even when the ticket fails (Nest needs a returned stream).
     return new Observable<MessageEvent>((subscriber) => {
+      let streamSubscription: Subscription | undefined;
+      let cancelled = false;
       void (async () => {
         try {
           const payload = await this.verifyTicket(token);
           await this.assertSessionActive(payload.sid);
           const principal = await buildPrincipal(this.prisma, payload.sub, payload.oid);
+          if (cancelled) return;
           const connectionId = randomUUID();
           await this.realtime.subscribe(connectionId, principal);
           const stream = this.realtime.open(connectionId);
-          stream.subscribe({
+          streamSubscription = stream.subscribe({
             next: (msg) => subscriber.next(msg),
             error: (err) => subscriber.error(err),
             complete: () => subscriber.complete(),
           });
+          if (cancelled) streamSubscription.unsubscribe();
         } catch (err) {
           subscriber.error(err);
         }
       })();
+
+      return () => {
+        cancelled = true;
+        streamSubscription?.unsubscribe();
+      };
     });
   }
 

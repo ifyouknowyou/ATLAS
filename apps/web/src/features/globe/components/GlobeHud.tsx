@@ -36,8 +36,8 @@ export function GlobeHud({ nodes }: { nodes: GlobeNode[] }) {
               <div className="mono-label text-phosphor">SELECTED SIGNAL</div>
               <div className="mt-1 font-mono text-lg text-slate-100">{selected.name}</div>
               <div className="mt-1 font-mono text-[11px] text-slate-tech">
-                {selected.type} · {selected.latitude.toFixed(2)}°N /{' '}
-                {selected.longitude.toFixed(2)}°E
+                {selected.type} · {formatCoordinate(selected.latitude, 'N', 'S')} /{' '}
+                {formatCoordinate(selected.longitude, 'E', 'W')}
               </div>
             </div>
             <div className="flex gap-2">
@@ -74,4 +74,8 @@ function HoverCard({ node }: { node: GlobeNode }) {
       </div>
     </div>
   );
+}
+
+function formatCoordinate(value: number, positive: string, negative: string) {
+  return `${Math.abs(value).toFixed(2)}°${value < 0 ? negative : positive}`;
 }

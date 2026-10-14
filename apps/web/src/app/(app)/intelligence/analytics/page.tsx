@@ -11,6 +11,7 @@ import { useInvestigations } from '@/lib/queries';
 import { useAuth } from '@/lib/auth-store';
 import { api } from '@/lib/api-client';
 import { formatWhen } from '@/lib/presentation';
+import { AtlasScene } from '@/features/scenes/AtlasScene';
 
 type AnalysisRecord = {
   id: string;
@@ -95,8 +96,13 @@ export default function IntelligenceAnalyticsPage() {
         </Panel>
       </section>
 
-      <Panel title="ANALYSIS DISTRIBUTION">
-        <div className="grid grid-cols-2 gap-3 sm:grid-cols-4 xl:grid-cols-7">
+      <Panel title="ANALYSIS DISTRIBUTION" actions={<span className="mono-label">RUNS BY ANALYSIS TYPE</span>}>
+        <AtlasScene
+          kind="analytics"
+          records={counts.map(({ type, count }) => ({ id: type, label: type.replaceAll('_', ' '), category: 'ANALYSIS TYPE', value: count }))}
+          className="h-[360px]"
+        />
+        <div className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-4 xl:grid-cols-7">
           {counts.map(({ type, count }) => <div key={type} className="rounded border border-void-line/60 bg-void-raised/40 p-2">
             <div className="mb-2 flex items-center justify-between"><span className="truncate font-mono text-[8px] text-slate-tech">{type.replaceAll('_', ' ')}</span><BarChart3 className="h-3 w-3 text-phosphor" /></div>
             <div className="font-mono text-lg text-slate-100">{analyses.isLoading ? '—' : count}</div>

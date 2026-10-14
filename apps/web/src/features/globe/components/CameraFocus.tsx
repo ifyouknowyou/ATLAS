@@ -5,7 +5,7 @@ import { useFrame } from '@react-three/fiber';
 import type { OrbitControls as OrbitControlsImpl } from 'three-stdlib';
 import { damp3 } from 'maath/easing';
 import * as THREE from 'three';
-import { globeNodes } from '../data/demoNodes';
+import type { GlobeNode } from '../data/demoNodes';
 import { useGlobe } from '../hooks/useGlobeState';
 import { GLOBE_RADIUS, nodeDirection } from '../systems/geometry';
 
@@ -16,13 +16,15 @@ import { GLOBE_RADIUS, nodeDirection } from '../systems/geometry';
  */
 export function CameraFocus({
   controls,
+  nodes,
 }: {
   controls: React.RefObject<OrbitControlsImpl | null>;
+  nodes: GlobeNode[];
 }) {
   const selectedId = useGlobe((s) => s.selectedId);
   const look = useRef(new THREE.Vector3(0, 0, 0));
 
-  const node = selectedId ? globeNodes.find((n) => n.id === selectedId) : null;
+  const node = selectedId ? nodes.find((item) => item.id === selectedId) : null;
   useEffect(() => {
     if (node) {
       look.current.copy(nodeDirection(node)).multiplyScalar(GLOBE_RADIUS * 0.55);

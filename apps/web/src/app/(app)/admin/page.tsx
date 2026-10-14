@@ -9,6 +9,7 @@ import { StatusBadge } from '@/components/ui/StatusBadge';
 import { useAuth } from '@/lib/auth-store';
 import { api } from '@/lib/api-client';
 import { formatWhen } from '@/lib/presentation';
+import { AtlasScene } from '@/features/scenes/AtlasScene';
 
 type SystemHealth = Record<string, 'HEALTHY' | 'DEGRADED' | 'UNHEALTHY'>;
 type AuditRecord = Record<string, unknown> & { id: string; createdAt: string };
@@ -39,13 +40,16 @@ export default function AdministrationPage() {
 
     <section className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_minmax(280px,.8fr)]">
       <Panel title="API-REPORTED OPERATIONS" actions={<span className="mono-label">REFRESH · 30S</span>}>
-        {operations.isLoading ? <Spinner label="Checking system health" /> : operations.isError ? <EmptyState title="OPERATIONS UNAVAILABLE" detail="System health could not be loaded. Access may be restricted." /> : <div className="grid gap-2 sm:grid-cols-2">
-          {services.map(([service, status]) => <div key={service} className="flex items-center gap-3 rounded border border-void-line/60 bg-void-raised/30 p-3">
-            <span className="text-phosphor">{service === 'database' ? <Database className="h-4 w-4" /> : <Activity className="h-4 w-4" />}</span>
-            <span className="min-w-0 flex-1 font-mono text-xs uppercase text-slate-100">{service}</span>
-            <StatusBadge tone={status === 'HEALTHY' ? 'signal' : status === 'UNHEALTHY' ? 'danger' : 'amber'}>{status}</StatusBadge>
-          </div>)}
-        </div>}
+        {operations.isLoading ? <Spinner label="Checking system health" /> : operations.isError ? <EmptyState title="OPERATIONS UNAVAILABLE" detail="System health could not be loaded. Access may be restricted." /> : <>
+          <AtlasScene kind="systems" records={services.map(([service, status]) => ({ id: service, label: service, category: 'SYSTEM SERVICE', status }))} className="h-[300px]" />
+          <div className="mt-3 grid gap-2 sm:grid-cols-2">
+            {services.map(([service, status]) => <div key={service} className="flex items-center gap-3 rounded border border-void-line/60 bg-void-raised/30 p-3">
+              <span className="text-phosphor">{service === 'database' ? <Database className="h-4 w-4" /> : <Activity className="h-4 w-4" />}</span>
+              <span className="min-w-0 flex-1 font-mono text-xs uppercase text-slate-100">{service}</span>
+              <StatusBadge tone={status === 'HEALTHY' ? 'signal' : status === 'UNHEALTHY' ? 'danger' : 'amber'}>{status}</StatusBadge>
+            </div>)}
+          </div>
+        </>}
       </Panel>
 
       <Panel title="AUDIT TRAIL" actions={<span className="mono-label">{audit.data?.length ?? 0} EVENTS</span>}>

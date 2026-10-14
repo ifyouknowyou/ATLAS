@@ -1,6 +1,10 @@
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { AssistantWorkspace } from './AssistantWorkspace';
 
+jest.mock('@/features/scenes/AtlasScene', () => ({
+  AtlasScene: () => <div data-testid="atlas-scene" />,
+}));
+
 interface TestMessage {
   id: string;
   role: 'USER' | 'ASSISTANT';

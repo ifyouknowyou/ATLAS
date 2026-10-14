@@ -32,7 +32,7 @@ export function Scene({ nodes, arcs }: { nodes: GlobeNode[]; arcs: Array<{ sourc
         autoRotate
         autoRotateSpeed={0.45}
       />
-      <CameraFocus controls={controls} />
+      <CameraFocus controls={controls} nodes={nodes} />
     </>
   );
 }

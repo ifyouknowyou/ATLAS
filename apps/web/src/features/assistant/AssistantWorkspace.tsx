@@ -8,6 +8,7 @@ import { Spinner } from '@/components/ui/Spinner';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { SummaryPanel } from './components/SummaryPanel';
 import { InvestigationPicker } from './components/InvestigationPicker';
+import { AtlasScene } from '@/features/scenes/AtlasScene';
 
 interface ChatMessage {
   id: string;
@@ -36,6 +37,19 @@ export function AssistantWorkspace() {
       })),
     [historyQuery.data],
   );
+  const contextRecords = useMemo(() => {
+    const sources = history.flatMap((message) => (message.sources ?? []).map((source) => ({
+      id: `${source.kind}:${source.id}`,
+      label: source.title,
+      category: source.kind,
+    })));
+    const uniqueSources = sources.filter((source, index) => sources.findIndex((candidate) => candidate.id === source.id) === index);
+    return uniqueSources.length ? uniqueSources : history.map((message) => ({
+      id: message.id,
+      label: message.content.slice(0, 80) || message.role,
+      category: `${message.role} MESSAGE`,
+    }));
+  }, [history]);
 
   const submit = (text: string) => {
     const trimmed = text.trim();
@@ -52,6 +66,9 @@ export function AssistantWorkspace() {
       <div className="flex flex-col gap-4">
         <InvestigationPicker value={investigationId} onChange={setInvestigationId} />
         <SummaryPanel investigationId={investigationId} />
+        <Panel title="GROUNDED CONTEXT FIELD" actions={<span className="mono-label">{contextRecords.length} REFERENCES</span>}>
+          <AtlasScene kind="constellation" records={contextRecords} className="h-[280px]" />
+        </Panel>
       </div>
       <Panel
         title="ASSISTANT"

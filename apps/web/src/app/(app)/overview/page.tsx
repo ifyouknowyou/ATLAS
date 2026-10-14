@@ -1,6 +1,7 @@
 'use client';
 
 import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 import { useQuery } from '@tanstack/react-query';
 import {
   ArrowRight,
@@ -39,16 +40,19 @@ export default function OverviewPage() {
   const counts = (org.data?._count as
     | Record<string, number>
     | undefined) ?? {};
+  const telemetryUnavailable = org.isError || investigations.isError || entities.isError || (canReadAlerts && alerts.isError);
+  const telemetryPending = org.isLoading || investigations.isLoading || entities.isLoading || (canReadAlerts && alerts.isLoading);
 
   const modules: Array<{
     title: string;
-    phase: string;
+    detail: string;
     icon: React.ReactNode;
+    href: string;
   }> = [
-    { title: 'Relationship Graph', phase: 'PHASE 3', icon: <Radar /> },
-    { title: 'Geospatial Map', phase: 'PHASE 3', icon: <Landmark /> },
-    { title: 'AI Assistant', phase: 'PHASE 4', icon: <Bot /> },
-    { title: 'Report Builder', phase: 'PHASE 5', icon: <FileText /> },
+    { title: 'Relationship Graph', detail: 'ENTITY NETWORK', icon: <Radar />, href: '/graph' },
+    { title: 'Geospatial Map', detail: 'LOCATION INTELLIGENCE', icon: <Landmark />, href: '/map' },
+    { title: 'AI Assistant', detail: 'GROUNDED COPILOT', icon: <Bot />, href: '/assistant' },
+    { title: 'Report Builder', detail: 'REPORT ARCHIVE', icon: <FileText />, href: '/reports' },
   ];
 
   return (
@@ -69,19 +73,19 @@ export default function OverviewPage() {
           </p>
         </div>
         <div className="mono-label flex items-center gap-2">
-          <span className="flex items-center gap-2 rounded border border-phosphor-faint/30 bg-phosphor-dim/10 px-2.5 py-1.5">
-            <span className="h-1.5 w-1.5 rounded-full bg-phosphor animate-pulse-slow" />
-            LIVE TELEMETRY
+          <span className={`flex items-center gap-2 rounded border px-2.5 py-1.5 ${telemetryUnavailable ? 'border-amber-signal/30 bg-amber-signal/5 text-amber-signal' : 'border-phosphor-faint/30 bg-phosphor-dim/10'}`}>
+            <span className={`h-1.5 w-1.5 rounded-full ${telemetryUnavailable ? 'bg-amber-signal' : 'bg-phosphor'} ${telemetryPending ? 'animate-pulse-slow' : ''}`} />
+            {telemetryPending ? 'CONNECTING TELEMETRY' : telemetryUnavailable ? 'TELEMETRY DEGRADED' : 'LIVE TELEMETRY'}
           </span>
         </div>
       </header>
 
       {/* Intelligence metrics */}
       <section className="grid grid-cols-2 gap-4 lg:grid-cols-4">
-        <MetricTile label="INVESTIGATIONS" value={counts.investigations ?? 0} busy={org.isLoading} hint="authorized case files" />
-        <MetricTile label="ENTITIES" value={counts.entities ?? 0} busy={org.isLoading} hint="people · infrastructure · orgs" />
-        <MetricTile label="SOURCES" value={counts.dataSources ?? counts.sources ?? 0} busy={org.isLoading} hint="connected intelligence feeds" />
-        <MetricTile label="ACTIVE ALERTS" value={canReadAlerts ? alerts.data?.filter((alert) => !['DISMISSED', 'RESOLVED'].includes(alert.status)).length ?? '—' : '—'} busy={canReadAlerts && alerts.isLoading} hint={alerts.isError ? 'alert feed unavailable' : 'unresolved signals'} />
+        <MetricTile label="INVESTIGATIONS" value={org.isError ? 'UNAVAILABLE' : counts.investigations ?? investigations.data?.total ?? '—'} busy={org.isLoading || investigations.isLoading} hint="authorized case files" />
+        <MetricTile label="ENTITIES" value={org.isError ? 'UNAVAILABLE' : counts.entities ?? entities.data?.total ?? '—'} busy={org.isLoading || entities.isLoading} hint="people · infrastructure · orgs" />
+        <MetricTile label="SOURCES" value={org.isError ? 'UNAVAILABLE' : counts.dataSources ?? counts.sources ?? '—'} busy={org.isLoading} hint="connected intelligence feeds" />
+        <MetricTile label="ACTIVE ALERTS" value={!canReadAlerts ? 'RESTRICTED' : alerts.isError ? 'UNAVAILABLE' : alerts.data?.filter((alert) => !['DISMISSED', 'RESOLVED'].includes(alert.status)).length ?? '—'} busy={canReadAlerts && alerts.isLoading} hint={alerts.isError ? 'alert feed unavailable' : 'unresolved signals'} />
       </section>
 
       <section className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_320px]">
@@ -137,7 +141,7 @@ export default function OverviewPage() {
               <div className="flex h-10 w-10 items-center justify-center rounded border border-phosphor-faint/30 bg-phosphor-dim/10"><ShieldCheck className="h-5 w-5 text-phosphor" /></div>
               <div><div className="font-mono text-sm text-slate-100">SECURITY ENFORCED</div><div className="mt-1 font-mono text-[10px] uppercase tracking-widest text-slate-tech">All access is audited</div></div>
             </div>
-            <div className="grid grid-cols-2 gap-3 pt-4"><Signal icon={<Database />} label="DATA" value="SYNC" /><Signal icon={<Users />} label="OPS" value={String(counts.memberships ?? 0)} /></div>
+            <div className="grid grid-cols-2 gap-3 pt-4"><Signal icon={<Database />} label="DATA" value={org.isLoading ? 'CHECKING' : org.isError ? 'UNAVAILABLE' : 'LIVE'} /><Signal icon={<Users />} label="OPS" value={org.isError ? '—' : String(counts.memberships ?? '—')} /></div>
           </Panel>
         </div>
       </section>
@@ -155,22 +159,23 @@ export default function OverviewPage() {
           </div>
         </Panel>
         <Panel title="ANALYTICAL SURFACES" className="lg:col-span-2">
-          <div className="grid gap-3 sm:grid-cols-3">
+          <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
         {modules.map((m) => (
-          <div
+          <Link
+            href={m.href}
             key={m.title}
-            className="panel flex items-center gap-3 p-4 transition-colors hover:border-phosphor-faint/30"
+            className="panel group flex items-center gap-3 p-4 transition-colors hover:border-phosphor-faint/30 focus-visible:outline focus-visible:outline-2 focus-visible:outline-phosphor"
           >
             <div className="flex h-9 w-9 items-center justify-center rounded border border-void-line bg-void-raised text-slate-tech">
               {m.icon}
             </div>
             <div>
               <div className="text-sm text-slate-200">{m.title}</div>
-              <div className="mt-0.5 font-mono text-[10px] uppercase tracking-widest text-slate-tech/70">
-                {m.phase} delivery
+              <div className="mt-0.5 font-mono text-[10px] uppercase tracking-widest text-slate-tech/70 group-hover:text-phosphor">
+              {m.detail}
               </div>
             </div>
-          </div>
+          </Link>
         ))}
           </div>
         </Panel>

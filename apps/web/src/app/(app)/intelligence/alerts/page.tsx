@@ -3,7 +3,7 @@
 import { useMemo, useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import Link from 'next/link';
-import { Activity, ArrowUpRight, Radio, ShieldAlert } from 'lucide-react';
+import { Activity, ArrowUpRight, Radio } from 'lucide-react';
 import { Panel } from '@/components/ui/Panel';
 import { Spinner } from '@/components/ui/Spinner';
 import { EmptyState } from '@/components/ui/EmptyState';
@@ -11,6 +11,7 @@ import { StatusBadge } from '@/components/ui/StatusBadge';
 import { useAuth } from '@/lib/auth-store';
 import { api } from '@/lib/api-client';
 import { formatWhen } from '@/lib/presentation';
+import { AtlasScene } from '@/features/scenes/AtlasScene';
 
 type AlertRecord = {
   id: string;
@@ -97,23 +98,12 @@ export default function IntelligenceAlertsPage() {
 
       <section className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_280px]">
         <Panel title="ALERT RADAR" actions={<span className="mono-label">{activeCount} ACTIVE SIGNALS</span>}>
-          <div className="relative grid min-h-[280px] place-items-center overflow-hidden rounded border border-void-line/60 bg-[#060b12] [perspective:800px]">
-            <div className="absolute inset-0 bg-grid bg-[length:32px_32px] opacity-25" />
-            <div className="relative aspect-square w-[min(68vw,250px)] rounded-full border border-amber-signal/25 shadow-[0_0_55px_rgba(232,182,76,.08),inset_0_0_45px_rgba(232,182,76,.06)] [transform:rotateX(58deg)]">
-              <div className="absolute inset-[17%] rounded-full border border-amber-signal/20" />
-              <div className="absolute inset-[34%] rounded-full border border-amber-signal/20" />
-              <div className="absolute inset-1/2 h-px w-full origin-left bg-amber-signal/15" />
-              <div className="absolute inset-y-0 left-1/2 border-l border-amber-signal/15" />
-              <div className="absolute inset-0 rounded-full bg-[conic-gradient(from_0deg,transparent_0deg,rgba(232,182,76,.22)_28deg,transparent_70deg)] motion-safe:animate-[spin_8s_linear_infinite]" />
-              {alerts.slice(0, 12).map((alert, index) => {
-                const angle = ((index * 137.5) % 360) * (Math.PI / 180);
-                const radius = 22 + (index % 3) * 14;
-                return <span key={alert.id} className={`absolute h-2 w-2 rounded-full ${alert.severity === 'CRITICAL' ? 'bg-danger shadow-[0_0_10px_#e05b5b]' : alert.severity === 'HIGH' ? 'bg-amber-signal shadow-[0_0_8px_#e8b64c]' : 'bg-phosphor shadow-glow'}`} style={{ left: `${50 + Math.cos(angle) * radius}%`, top: `${50 + Math.sin(angle) * radius}%` }} title={`${alert.severity}: ${alert.title}`} />
-              })}
-              <span className="absolute left-1/2 top-1/2 grid h-10 w-10 -translate-x-1/2 -translate-y-1/2 place-items-center rounded-full border border-amber-signal/40 bg-void-raised text-amber-signal"><ShieldAlert className="h-5 w-5" /></span>
-            </div>
-            <div className="absolute bottom-3 left-3 flex items-center gap-2 font-mono text-[9px] uppercase tracking-widest text-slate-tech"><Activity className="h-3 w-3 text-amber-signal" /> live alert distribution · actual records</div>
-          </div>
+          <AtlasScene
+            kind="radar"
+            records={alerts.map((alert) => ({ id: alert.id, label: alert.title, category: alert.severity, status: alert.status }))}
+            className="h-[320px]"
+          />
+          <div className="mt-2 flex items-center gap-2 font-mono text-[9px] uppercase tracking-widest text-slate-tech"><Activity className="h-3 w-3 text-amber-signal" /> alert distribution · actual records</div>
         </Panel>
 
         <Panel title="WATCHLIST OVERVIEW" className="max-h-[390px] overflow-y-auto">

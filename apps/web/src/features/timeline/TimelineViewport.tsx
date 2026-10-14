@@ -3,6 +3,7 @@ import { useMemo } from 'react';
 import type { TimelineRow } from '@/lib/queries';
 import { bucketEvents, kindColor, timelineBounds, xForTime } from './engine/timelineEngine';
 import { useTimeline } from '@/lib/queries';
+import { AtlasScene } from '@/features/scenes/AtlasScene';
 
 interface TimelineViewportProps {
   investigationId?: string;
@@ -12,6 +13,7 @@ interface TimelineViewportProps {
   onSelectEvent?: (eventId: string | null) => void;
   /** Event id currently selected in the list — rendered with emphasis. */
   selectedEventId?: string | null;
+  view?: '3d' | '2d';
 }
 
 const WIDTH = 960;
@@ -23,7 +25,7 @@ const PAD = 40;
  * Horizontal chronological timeline: density histogram + per-kind lanes.
  * SVG for accessibility and testability (§25-27).
  */
-export function TimelineViewport({ investigationId, entityId, from, to, onSelectEvent, selectedEventId }: TimelineViewportProps) {
+export function TimelineViewport({ investigationId, entityId, from, to, onSelectEvent, selectedEventId, view = '3d' }: TimelineViewportProps) {
   const { data, isLoading, isError } = useTimeline({ investigationId, entityId, from, to, limit: 200 });
   const items = data?.items;
 
@@ -51,6 +53,22 @@ export function TimelineViewport({ investigationId, entityId, from, to, onSelect
   }
   if ((items?.length ?? 0) === 0) {
     return <div className="flex h-40 items-center justify-center font-mono text-[11px] text-slate-tech">NO EVENTS</div>;
+  }
+
+  if (view === '3d') {
+    return (
+      <AtlasScene
+        kind="timeline"
+        records={(items ?? []).map((item) => ({
+          id: item.id,
+          label: item.title,
+          category: item.kind,
+          occurredAt: item.occurredAt,
+        }))}
+        className="h-[min(62vh,560px)] min-h-[340px]"
+        onSelect={(record) => onSelectEvent?.(record.id)}
+      />
+    );
   }
 
   const maxDensity = Math.max(...layout.density.map((d) => d.count), 1);

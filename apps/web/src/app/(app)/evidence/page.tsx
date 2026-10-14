@@ -11,6 +11,7 @@ import { StatusBadge } from '@/components/ui/StatusBadge';
 import { ClassificationBadge } from '@/components/ui/ClassificationBadge';
 import { EvidenceDropzone } from '@/features/evidence/EvidenceDropzone';
 import { cn } from '@/lib/cn';
+import { AtlasScene } from '@/features/scenes/AtlasScene';
 
 const TYPES = ['DOCUMENT', 'IMAGE', 'VIDEO', 'AUDIO', 'ARCHIVE', 'WEB_ARTIFACT', 'LOG', 'DATASET', 'OTHER'];
 const STATUSES = ['PENDING', 'AVAILABLE', 'ARCHIVED', 'RESTRICTED'];
@@ -102,17 +103,13 @@ export default function EvidenceVaultPage() {
         </div>
       </Panel>
 
-      {!query.isLoading && items.length > 0 && <section className="panel relative overflow-hidden p-4 [perspective:1200px]">
-        <div className="absolute inset-0 opacity-45" style={{ backgroundImage: 'radial-gradient(ellipse at 50% 0%, rgba(121,184,255,.12), transparent 58%), linear-gradient(rgba(121,184,255,.055) 1px, transparent 1px), linear-gradient(90deg, rgba(121,184,255,.055) 1px, transparent 1px)', backgroundSize: 'auto, 34px 34px, 34px 34px' }} />
-        <div className="relative flex flex-wrap items-end justify-between gap-2"><div><div className="mono-label text-sky-300">EVIDENCE VAULT · PERSPECTIVE INDEX</div><h2 className="mt-1 font-mono text-xs tracking-widest text-slate-100">CHAIN-OF-CUSTODY RECORDS</h2></div><span className="mono-label">{Math.min(items.length, 8)} VISIBLE · FILTERED PAGE</span></div>
-        <div className="relative mt-4 grid gap-2 sm:grid-cols-2 xl:grid-cols-4 [transform:perspective(1200px)_rotateX(7deg)]">
-          {items.slice(0, 8).map((item, index) => <Link key={item.id} href={`/evidence/${item.id}`} className="group min-w-0 rounded border border-sky-300/20 bg-[#091522]/90 p-3 shadow-[0_10px_25px_rgba(0,0,0,.24)] transition-colors hover:border-sky-300/60 hover:bg-sky-300/5" style={{ transform: `translateY(${(index % 2) * 5}px)` }}>
-            <div className="flex items-center justify-between gap-2"><StatusBadge tone="neutral">{item.kind}</StatusBadge><StatusBadge tone={item.status === 'AVAILABLE' ? 'signal' : item.status === 'RESTRICTED' ? 'danger' : 'amber'}>{item.status}</StatusBadge></div>
-            <div className="mt-2 truncate font-mono text-xs text-slate-100 group-hover:text-sky-200">{item.name}</div>
-            <div className="mt-2 flex items-center justify-between gap-2"><ClassificationBadge classification={item.classification} /><span className="truncate font-mono text-[9px] text-slate-tech">{item.hash ? `${item.hash.slice(0, 10)}…` : item.processingStatus ?? 'HASH UNAVAILABLE'}</span></div>
-          </Link>)}
-        </div>
-      </section>}
+      {!query.isLoading && items.length > 0 && <Panel title="THREE-DIMENSIONAL EVIDENCE INDEX" actions={<span className="mono-label">{items.length} FILTERED RECORDS</span>}>
+        <AtlasScene
+          kind="archive"
+          records={items.map((item) => ({ id: item.id, label: item.name, category: item.kind, status: item.status }))}
+          className="h-[380px]"
+        />
+      </Panel>}
 
       <Panel title="EVIDENCE MANIFEST" actions={<span className="mono-label">{items.length} OF {total} LOADED</span>}>
         {query.isLoading ? (
