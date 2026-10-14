@@ -3,14 +3,7 @@ import { persist, createJSONStorage } from 'zustand/middleware';
 import type { LoginResponse, Permission } from '@atlas/shared';
 import { api } from './api-client';
 
-/**
- * Client session store. Holds the opaque access token + the permission-ful
- * principal returned by the server. This is UX state only — every protected
- * operation is re-authorized server-side.
- *
- * Phase 7 hardening: move to HttpOnly SameSite cookies via a same-origin proxy
- * so tokens never live in localStorage.
- */
+/** Client session store for the automatically initialized demo principal. */
 export interface SessionPrincipal {
   userId: string;
   organizationId: string;
@@ -23,71 +16,79 @@ interface AuthState {
   token: string | null;
   principal: SessionPrincipal | null;
   hydrated: boolean;
-  login: (email: string, password: string) => Promise<void>;
+  sessionError: string | null;
   refreshSession: () => Promise<void>;
-  logout: () => Promise<void>;
   has: (permission: Permission) => boolean;
   anyOf: (permissions: Permission[]) => boolean;
 }
 
 export const useAuth = create<AuthState>()(
   persist(
-    (set, get) => ({
-      token: null,
-      principal: null,
-      hydrated: false,
-
-      async login(email, password) {
-        const response = await api.post<LoginResponse>('/auth/login', {
-          email,
-          password,
-        });
+    (set, get) => {
+      const establishDemoSession = async () => {
+        const response = await api.post<LoginResponse>('/auth/demo-session', {});
         set({
           token: response.accessToken,
-          principal: {
-            userId: response.session.userId,
-            organizationId: response.session.organizationId,
-            workspaceId: response.session.workspaceId,
-            role: response.session.role,
-            permissions: response.session.permissions,
-          },
+          principal: response.session,
+          hydrated: true,
+          sessionError: null,
         });
-      },
+      };
 
-      /** Re-resolve the principal from the API so role changes apply at once. */
-      async refreshSession() {
-        const token = get().token;
-        if (!token) {
-          set({ principal: null, hydrated: true });
-          return;
-        }
-        try {
-          const { session } = await api.get<{ session: SessionPrincipal }>(
-            '/auth/session',
-            token,
-          );
-          set({ principal: session, hydrated: true });
-        } catch {
-          set({ token: null, principal: null, hydrated: true });
-        }
-      },
+      return {
+        token: null,
+        principal: null,
+        hydrated: false,
+        sessionError: null,
 
-      async logout() {
-        const token = get().token;
-        if (token) {
-          await api.post('/auth/logout', {}, token).catch(() => undefined);
-        }
-        set({ token: null, principal: null });
-      },
+        async refreshSession() {
+          const token = get().token;
+          if (!token) {
+            try {
+              await establishDemoSession();
+            } catch (error) {
+              set({
+                principal: null,
+                hydrated: true,
+                sessionError:
+                  error instanceof Error
+                    ? error.message
+                    : 'Could not initialize the demo session',
+              });
+            }
+            return;
+          }
+          try {
+            const { session } = await api.get<{ session: SessionPrincipal }>(
+              '/auth/session',
+              token,
+            );
+            set({ principal: session, hydrated: true, sessionError: null });
+          } catch {
+            set({ token: null, principal: null });
+            try {
+              await establishDemoSession();
+            } catch (error) {
+              set({
+                hydrated: true,
+                sessionError:
+                  error instanceof Error
+                    ? error.message
+                    : 'Could not initialize the demo session',
+              });
+            }
+          }
+        },
 
-      has(permission) {
-        return get().principal?.permissions.includes(permission) ?? false;
-      },
+        has(permission) {
+          return get().principal?.permissions.includes(permission) ?? false;
+        },
 
-      anyOf(permissions) {
-        return permissions.some((p) => get().has(p));
-      },
-    }),
+        anyOf(permissions) {
+          return permissions.some((p) => get().has(p));
+        },
+      };
+    },
     {
       name: 'atlas.session',
       storage: createJSONStorage(() => localStorage),
@@ -96,8 +97,7 @@ export const useAuth = create<AuthState>()(
         principal: state.principal,
       }),
       onRehydrateStorage: () => (state) => {
-        // Mark client-state hydrated after localStorage rehydration so
-        // RouteGuard doesn't flash the login page.
+        // Mark client state hydrated after localStorage rehydration.
         useAuth.setState({ hydrated: true });
         return state;
       },

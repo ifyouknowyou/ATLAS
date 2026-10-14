@@ -10,12 +10,10 @@ const queryClient = new QueryClient({
   },
 });
 
-/**
- * Reconciles the persisted session against the API on load so the principal
- * (role/permissions/workspace) is always server-authoritative.
- */
+/** Reconciles the persisted demo session with the API on load. */
 function AuthHydrator({ children }: { children: React.ReactNode }) {
   const hydrated = useAuth((s) => s.hydrated);
+  const sessionError = useAuth((s) => s.sessionError);
   const refreshSession = useAuth((s) => s.refreshSession);
   const ran = useRef(false);
 
@@ -27,6 +25,16 @@ function AuthHydrator({ children }: { children: React.ReactNode }) {
 
   if (!hydrated) {
     return <BootScreen />;
+  }
+  if (sessionError) {
+    return (
+      <div className="flex min-h-screen flex-col items-center justify-center gap-3 bg-void px-6 text-center">
+        <span className="font-mono text-sm tracking-[0.2em] text-amber-signal">
+          ATLAS DEMO UNAVAILABLE
+        </span>
+        <p className="max-w-lg text-sm text-slate-tech">{sessionError}</p>
+      </div>
+    );
   }
   return children;
 }

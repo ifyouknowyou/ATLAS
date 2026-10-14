@@ -1,7 +1,6 @@
 'use client';
 
-import { useRouter } from 'next/navigation';
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { useAuth } from '@/lib/auth-store';
 import { Sidebar } from './Sidebar';
 import { TopBar } from './TopBar';
@@ -9,32 +8,18 @@ import { SystemStatusBar } from './SystemStatusBar';
 import { Spinner } from '@/components/ui/Spinner';
 
 /**
- * Protected application shell. Renders the persistent chrome (sidebar + top
- * bar) and redirects unauthenticated sessions to /login. Authorization is
- * UX-level here; every API call is still protected server-side.
+ * Renders the persistent application chrome after the demo session is ready.
  */
 export function AppShell({ children }: { children: React.ReactNode }) {
-  const router = useRouter();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const hydrated = useAuth((s) => s.hydrated);
-  const token = useAuth((s) => s.token);
-
-  useEffect(() => {
-    if (hydrated && !token) {
-      router.replace('/login');
-    }
-  }, [hydrated, token, router]);
 
   if (!hydrated) {
     return (
       <div className="flex h-screen items-center justify-center">
-        <Spinner label="Authenticating" />
+        <Spinner label="Initializing ATLAS" />
       </div>
     );
-  }
-
-  if (!token) {
-    return null; // redirect effect is in flight
   }
 
   return (

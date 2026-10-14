@@ -31,6 +31,14 @@ export class AuthController {
     return this.auth.login(dto);
   }
 
+  @Public()
+  @Post('demo-session')
+  @HttpCode(HttpStatus.OK)
+  @UseGuards(LoginThrottleGuard)
+  demoSession(): Promise<LoginResponse> {
+    return this.auth.demoSession();
+  }
+
   /** Fresh principal for the current session (role/permissions re-resolved). */
   @Get('session')
   session(@Req() request: AuthenticatedRequest) {

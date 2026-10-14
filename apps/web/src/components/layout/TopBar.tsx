@@ -2,7 +2,7 @@
 
 import { usePathname, useRouter } from 'next/navigation';
 import { useState } from 'react';
-import { Command, LogOut, Menu, Search, UserCircle2 } from 'lucide-react';
+import { Command, Menu, Search, UserCircle2 } from 'lucide-react';
 import { useAuth } from '@/lib/auth-store';
 import { pageTitleFor } from '@/lib/navigation';
 import { NotificationBell } from '@/components/ui/NotificationBell';
@@ -11,17 +11,11 @@ export function TopBar({ onMenu }: { onMenu?: () => void }) {
   const pathname = usePathname();
   const router = useRouter();
   const principal = useAuth((s) => s.principal);
-  const logout = useAuth((s) => s.logout);
   const [q, setQ] = useState('');
 
   const runSearch = (event: React.FormEvent) => {
     event.preventDefault();
     router.push(`/search?q=${encodeURIComponent(q)}`);
-  };
-
-  const handleLogout = async () => {
-    await logout();
-    router.replace('/login');
   };
 
   return (
@@ -67,16 +61,6 @@ export function TopBar({ onMenu }: { onMenu?: () => void }) {
             {principal?.role ?? 'NONE'}
           </span>
         </div>
-
-        <button
-          type="button"
-          onClick={() => void handleLogout()}
-          className="tech-button px-2.5 py-1.5"
-          aria-label="Log out"
-        >
-          <LogOut className="h-3.5 w-3.5" />
-          <span className="hidden lg:inline">EXIT</span>
-        </button>
       </div>
     </header>
   );

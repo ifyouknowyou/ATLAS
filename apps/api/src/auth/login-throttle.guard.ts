@@ -18,9 +18,8 @@ interface AttemptState {
 }
 
 /**
- * Minimal per-IP in-memory throttle for the login endpoint. Not a distributed
- * limiter — that belongs to production hardening (Phase 7). Enough to blunt
- * brute-force noise against the demo surface.
+ * Minimal per-IP in-memory throttle for password and demo-session endpoints.
+ * Not a distributed limiter — that belongs to production hardening (Phase 7).
  */
 @Injectable()
 export class LoginThrottleGuard implements CanActivate {
