@@ -7,9 +7,10 @@ import { Planet } from './Planet';
 import { ParticleField } from './ParticleField';
 import { MarkerField } from './MarkerField';
 import { CameraFocus } from './CameraFocus';
+import type { GlobeNode } from '../data/demoNodes';
 
 /** The 3D intelligence-space scene. Rendered only inside the lazy canvas. */
-export function Scene() {
+export function Scene({ nodes, arcs }: { nodes: GlobeNode[]; arcs: Array<{ source: string; target: string }> }) {
   const controls = useRef<OrbitControlsImpl>(null);
 
   return (
@@ -20,7 +21,7 @@ export function Scene() {
 
       <Planet />
       <ParticleField />
-      <MarkerField />
+      <MarkerField nodes={nodes} arcs={arcs} />
 
       <OrbitControls
         ref={controls}

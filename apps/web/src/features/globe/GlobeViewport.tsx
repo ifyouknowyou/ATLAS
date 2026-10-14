@@ -6,6 +6,7 @@ import { cn } from '@/lib/cn';
 import { isWebGLAvailable } from './webgl';
 import { GlobeFallback } from './components/GlobeFallback';
 import { GlobeHud } from './components/GlobeHud';
+import { useArcs, useLocations } from '@/lib/queries';
 
 const GlobeCanvas = dynamic(() => import('./GlobeCanvas'), {
   ssr: false,
@@ -18,6 +19,22 @@ const GlobeCanvas = dynamic(() => import('./GlobeCanvas'), {
  */
 export function GlobeViewport({ className }: { className?: string }) {
   const [supported] = useState(() => isWebGLAvailable());
+  const locations = useLocations({ limit: 500 });
+  const arcs = useArcs();
+  const nodes = (locations.data ?? []).filter(
+    (node) => node.latitude != null && node.longitude != null,
+  ).map((node) => ({
+    id: node.id,
+    name: node.name,
+    type: node.type,
+    latitude: node.latitude as number,
+    longitude: node.longitude as number,
+  }));
+  const liveArcs = (arcs.data ?? []).flatMap((arc, index) => {
+    const source = nodes.find((node) => node.latitude === arc.source.latitude && node.longitude === arc.source.longitude);
+    const target = nodes.find((node) => node.latitude === arc.target.latitude && node.longitude === arc.target.longitude);
+    return source && target ? [{ source: source.id, target: target.id, key: `${source.id}-${target.id}-${index}` }] : [];
+  });
 
   return (
     <div
@@ -27,9 +44,9 @@ export function GlobeViewport({ className }: { className?: string }) {
       )}
     >
       <div className="absolute inset-0">
-        {supported ? <GlobeCanvas /> : <GlobeFallback />}
+        {supported ? <GlobeCanvas nodes={nodes} arcs={liveArcs} /> : <GlobeFallback />}
       </div>
-      {supported && <GlobeHud />}
+      {supported && <GlobeHud nodes={nodes} />}
     </div>
   );
 }

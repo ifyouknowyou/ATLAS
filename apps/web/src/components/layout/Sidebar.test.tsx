@@ -32,7 +32,7 @@ describe('Sidebar (permission-aware navigation)', () => {
   it('shows intelligence entries the VIEWER can read', () => {
     useAuth.setState({ principal: principalFor('VIEWER') });
     render(<Sidebar />);
-    for (const label of ['Overview', 'Investigations', 'Entities']) {
+    for (const label of ['Dashboard', 'Investigations', 'Entities']) {
       expect(screen.getByText(label)).toBeInTheDocument();
     }
   });

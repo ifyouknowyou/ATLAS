@@ -1,20 +1,20 @@
 'use client';
 
 import { useCallback } from 'react';
-import { globeNodes, DEMO_MARKER } from '../data/demoNodes';
+import type { GlobeNode } from '../data/demoNodes';
 import { useGlobe, hoveredNode } from '../hooks/useGlobeState';
 
 /**
  * DOM overlay companion to the 3D scene: coordinates readout, selection
  * details and demo-data disclaimer.
  */
-export function GlobeHud() {
+export function GlobeHud({ nodes }: { nodes: GlobeNode[] }) {
   const selectedId = useGlobe((s) => s.selectedId);
   const hoveredId = useGlobe((s) => s.hoveredId);
   const setSelected = useGlobe((s) => s.setSelected);
 
-  const hovered = hoveredNode(globeNodes, hoveredId);
-  const selected = hoveredNode(globeNodes, selectedId);
+  const hovered = hoveredNode(nodes, hoveredId);
+  const selected = hoveredNode(nodes, selectedId);
 
   const clear = useCallback(() => setSelected(null), [setSelected]);
 
@@ -22,7 +22,7 @@ export function GlobeHud() {
     <>
       <div className="pointer-events-none absolute left-4 top-4 flex items-center gap-2">
         <span className="h-2 w-2 rounded-full bg-phosphor animate-pulse-slow shadow-glow" />
-        <span className="mono-label">GLOBE-01 · {DEMO_MARKER.toUpperCase()} FEED</span>
+        <span className="mono-label">GLOBE-01 · AUTHORIZED GEOINT FEED</span>
       </div>
 
       {hovered && !selected && (
@@ -42,7 +42,7 @@ export function GlobeHud() {
             </div>
             <div className="flex gap-2">
               <span className="rounded border border-void-line px-2 py-1 font-mono text-[10px] uppercase tracking-widest text-amber-signal">
-                {DEMO_MARKER}
+                LIVE
               </span>
               <button
                 type="button"
@@ -60,7 +60,7 @@ export function GlobeHud() {
   );
 }
 
-function HoverCard({ node }: { node: (typeof globeNodes)[number] }) {
+function HoverCard({ node }: { node: GlobeNode }) {
   const setHovered = useGlobe((s) => s.setHovered);
   return (
     <div

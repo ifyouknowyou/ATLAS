@@ -25,7 +25,7 @@ export interface NavItem {
 }
 
 const primary: NavItem[] = [
-  { href: '/overview', label: 'Overview', icon: LayoutDashboard },
+  { href: '/overview', label: 'Dashboard', icon: LayoutDashboard },
   { href: '/search', label: 'Search', icon: Search },
   {
     href: '/investigations',

@@ -3,7 +3,7 @@
 import { useMemo } from 'react';
 import * as THREE from 'three';
 import { Instance, Instances, Line } from '@react-three/drei';
-import { globeArcs, globeNodes } from '../data/demoNodes';
+import type { GlobeNode } from '../data/demoNodes';
 import { useGlobe } from '../hooks/useGlobeState';
 import { arcPoints, nodeSurfacePosition } from '../systems/geometry';
 
@@ -12,26 +12,26 @@ import { arcPoints, nodeSurfacePosition } from '../systems/geometry';
  * Interaction updates a shared zustand store so the DOM HUD can react without
  * re-rendering the whole scene.
  */
-export function MarkerField() {
+export function MarkerField({ nodes, arcs: arcInputs }: { nodes: GlobeNode[]; arcs: Array<{ source: string; target: string }> }) {
   const selectedId = useGlobe((s) => s.selectedId);
   const setHovered = useGlobe((s) => s.setHovered);
   const setSelected = useGlobe((s) => s.setSelected);
 
   const markers = useMemo(
     () =>
-      globeNodes.map((node) => ({
+      nodes.map((node) => ({
         node,
         position: nodeSurfacePosition(node),
       })),
-    [],
+    [nodes],
   );
 
   const arcs = useMemo(
     () =>
-      globeArcs
+      arcInputs
         .map((arc) => {
-          const from = globeNodes.find((n) => n.id === arc.source);
-          const to = globeNodes.find((n) => n.id === arc.target);
+          const from = nodes.find((n) => n.id === arc.source);
+          const to = nodes.find((n) => n.id === arc.target);
           if (!from || !to) return null;
           return arcPoints(
             nodeSurfacePosition(from),
@@ -39,7 +39,7 @@ export function MarkerField() {
           );
         })
         .filter((points): points is THREE.Vector3[] => points !== null),
-    [],
+    [arcInputs, nodes],
   );
 
   return (

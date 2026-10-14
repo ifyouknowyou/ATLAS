@@ -69,7 +69,7 @@ export function TimelinePanel({ investigationId, onSelectEvent, selectedEventId 
           >
             <span className="mt-1 h-2 w-2 shrink-0 rounded-full" style={{ background: kindColor(e.kind) }} />
             <span className="min-w-0 flex-1">
-              <span className="block truncate text-[12px] text-void">{e.title}</span>
+              <span className="block truncate text-[12px] text-slate-100">{e.title}</span>
               <span className="block font-mono text-[10px] text-slate-tech">{formatWhen(e.occurredAt)}</span>
             </span>
             <span className="mono-label text-[9px] text-slate-tech">{e.kind}</span>

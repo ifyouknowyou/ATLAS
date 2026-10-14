@@ -7,13 +7,7 @@
 export interface GlobeNode {
   id: string;
   name: string;
-  type:
-    | 'PERSON'
-    | 'ORGANIZATION'
-    | 'DOMAIN'
-    | 'IP_ADDRESS'
-    | 'LOCATION'
-    | 'ACCOUNT';
+  type: string;
   latitude: number;
   longitude: number;
 }

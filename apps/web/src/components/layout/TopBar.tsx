@@ -2,12 +2,12 @@
 
 import { usePathname, useRouter } from 'next/navigation';
 import { useState } from 'react';
-import { Boxes, LogOut, Search, UserCircle2 } from 'lucide-react';
+import { Boxes, LogOut, Menu, Search, UserCircle2 } from 'lucide-react';
 import { useAuth } from '@/lib/auth-store';
 import { pageTitleFor } from '@/lib/navigation';
 import { NotificationBell } from '@/components/ui/NotificationBell';
 
-export function TopBar() {
+export function TopBar({ onMenu }: { onMenu?: () => void }) {
   const pathname = usePathname();
   const router = useRouter();
   const principal = useAuth((s) => s.principal);
@@ -27,6 +27,9 @@ export function TopBar() {
   return (
     <header className="flex h-14 shrink-0 items-center justify-between gap-4 border-b border-void-line bg-void-raised/50 px-5">
       <div className="flex items-center gap-3">
+        <button type="button" className="atlas-menu-button tech-button p-2 lg:hidden" onClick={onMenu} aria-label="Open navigation">
+          <Menu className="h-4 w-4" />
+        </button>
         <h1 className="font-mono text-sm tracking-[0.18em] text-slate-200">
           {pageTitleFor(pathname)}
         </h1>

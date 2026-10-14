@@ -22,6 +22,7 @@ import { NotesTab } from './tabs/NotesTab';
 import { TasksTab } from './tabs/TasksTab';
 import { MembersTab } from './tabs/MembersTab';
 import { ActivityTab } from './tabs/ActivityTab';
+import { TimelineWorkspace } from '@/features/timeline/TimelineWorkspace';
 
 const SECTIONS = [
   'OVERVIEW',
@@ -192,22 +193,8 @@ function SectionBody({ section, id }: { section: Section; id: string }) {
     case 'ACTIVITY':
       return <ActivityTab id={id} />;
     case 'TIMELINE':
-      return (
-        <PanelPlaceholder
-          title="TIMELINE MODULE"
-          detail="Timeline reconstruction arrives in Phase 3."
-        />
-      );
+      return <TimelineWorkspace investigationId={id} />;
     default:
       return null;
   }
-}
-
-function PanelPlaceholder({ title, detail }: { title: string; detail: string }) {
-  return (
-    <div className="panel flex flex-col items-center gap-2 border border-dashed border-void-line py-14 text-center">
-      <span className="font-mono text-xs uppercase tracking-[0.3em] text-slate-tech">{title}</span>
-      <span className="max-w-md text-sm text-slate-tech/80">{detail}</span>
-    </div>
-  );
 }

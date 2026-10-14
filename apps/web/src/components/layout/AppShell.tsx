@@ -1,10 +1,11 @@
 'use client';
 
 import { useRouter } from 'next/navigation';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useAuth } from '@/lib/auth-store';
 import { Sidebar } from './Sidebar';
 import { TopBar } from './TopBar';
+import { SystemStatusBar } from './SystemStatusBar';
 import { Spinner } from '@/components/ui/Spinner';
 
 /**
@@ -14,6 +15,7 @@ import { Spinner } from '@/components/ui/Spinner';
  */
 export function AppShell({ children }: { children: React.ReactNode }) {
   const router = useRouter();
+  const [sidebarOpen, setSidebarOpen] = useState(false);
   const hydrated = useAuth((s) => s.hydrated);
   const token = useAuth((s) => s.token);
 
@@ -36,11 +38,13 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   }
 
   return (
-    <div className="flex h-screen overflow-hidden">
-      <Sidebar />
+    <div className="atlas-shell flex h-screen overflow-hidden">
+      <div className={sidebarOpen ? 'atlas-sidebar-backdrop is-open' : 'atlas-sidebar-backdrop'} onClick={() => setSidebarOpen(false)} aria-hidden="true" />
+      <Sidebar mobileOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
       <div className="flex min-w-0 flex-1 flex-col">
-        <TopBar />
-        <main className="min-h-0 flex-1 overflow-y-auto p-6">{children}</main>
+        <TopBar onMenu={() => setSidebarOpen(true)} />
+        <main className="atlas-main min-h-0 flex-1 overflow-y-auto p-4 sm:p-6">{children}</main>
+        <SystemStatusBar />
       </div>
     </div>
   );

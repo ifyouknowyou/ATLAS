@@ -6,12 +6,15 @@ import { navSections } from '@/lib/navigation';
 import { useAuth } from '@/lib/auth-store';
 import { cn } from '@/lib/cn';
 
-export function Sidebar() {
+export function Sidebar({ mobileOpen = false, onClose }: { mobileOpen?: boolean; onClose?: () => void }) {
   const pathname = usePathname();
   const has = useAuth((s) => s.has);
 
   return (
-    <aside className="flex h-full w-64 shrink-0 flex-col border-r border-void-line bg-void-raised/60">
+    <aside className={cn(
+      'atlas-sidebar flex h-full w-64 shrink-0 flex-col border-r border-void-line bg-void-raised/85',
+      mobileOpen && 'is-open',
+    )}>
       <div className="flex items-center gap-3 px-5 py-5">
         <div className="flex h-8 w-8 items-center justify-center rounded border border-phosphor-faint/50 bg-phosphor-dim/15">
           <span className="font-mono text-sm font-bold text-phosphor">A</span>
@@ -47,6 +50,7 @@ export function Sidebar() {
                   <li key={item.href}>
                     <Link
                       href={item.href}
+                      onClick={onClose}
                       className={cn(
                         'group flex items-center gap-3 rounded-md px-3 py-2 text-sm transition-colors',
                         active

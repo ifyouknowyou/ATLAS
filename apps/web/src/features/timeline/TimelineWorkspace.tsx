@@ -8,13 +8,14 @@ import { TimelineViewport } from './TimelineViewport';
  * Left: kind filters + event list. Center: density lanes. Selection is
  * shared so picking an event in one surface drives the other (§28).
  */
-export function TimelineWorkspace() {
+export function TimelineWorkspace({ investigationId }: { investigationId?: string }) {
   const [selectedEventId, setSelectedEventId] = useState<string | null>(null);
 
   return (
     <div className="grid gap-4 lg:grid-cols-[300px_1fr]">
-      <TimelinePanel onSelectEvent={setSelectedEventId} selectedEventId={selectedEventId} />
+      <TimelinePanel investigationId={investigationId} onSelectEvent={setSelectedEventId} selectedEventId={selectedEventId} />
       <TimelineViewport
+        investigationId={investigationId}
         onSelectEvent={setSelectedEventId}
         selectedEventId={selectedEventId}
       />

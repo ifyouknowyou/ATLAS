@@ -1,4 +1,5 @@
 import { render, screen } from '@testing-library/react';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { GlobeViewport } from './GlobeViewport';
 
 /**
@@ -7,7 +8,12 @@ import { GlobeViewport } from './GlobeViewport';
  */
 describe('GlobeViewport', () => {
   it('renders the WebGL fallback when WebGL is unavailable', async () => {
-    render(<GlobeViewport className="h-64 w-full" />);
+    const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+    render(
+      <QueryClientProvider client={queryClient}>
+        <GlobeViewport className="h-64 w-full" />
+      </QueryClientProvider>,
+    );
     expect(
       await screen.findByText('WEBGL UNAVAILABLE'),
     ).toBeInTheDocument();
