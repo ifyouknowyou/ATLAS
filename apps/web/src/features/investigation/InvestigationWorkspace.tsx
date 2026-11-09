@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { ArrowLeft, Archive, RotateCcw } from 'lucide-react';
+import { ArrowLeft, Archive, BrainCircuit, FileText, GitBranch, Map, RotateCcw, Upload, Plus, CheckSquare } from 'lucide-react';
 import {
   useArchiveInvestigation,
   useInvestigation,
@@ -34,6 +34,8 @@ const SECTIONS = [
   'TASKS',
   'MEMBERS',
   'ACTIVITY',
+  'GRAPH',
+  'REPORTS',
 ] as const;
 type Section = (typeof SECTIONS)[number];
 
@@ -76,6 +78,15 @@ export function InvestigationWorkspace({ id }: { id: string }) {
   }, [id, section, router]);
 
   if (query.isLoading) return <Spinner label="Opening case file" />;
+  if (query.isError) {
+    return (
+      <div className="panel flex flex-col items-center gap-3 py-16 text-center" role="alert">
+        <span className="mono-label text-amber-signal">CASE FILE UNAVAILABLE</span>
+        <span className="max-w-md text-sm text-slate-tech">The investigation could not be loaded. Check your access or try again.</span>
+        <button type="button" className="tech-button" onClick={() => void query.refetch()}>RETRY</button>
+      </div>
+    );
+  }
   if (!investigation) {
     return (
       <div className="panel flex flex-col items-center gap-2 py-16 text-center">
@@ -151,6 +162,32 @@ export function InvestigationWorkspace({ id }: { id: string }) {
         </div>
       </header>
 
+      <section className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4" aria-label="Investigation record counts">
+        <CountCard label="ENTITIES" value={investigation._count?.entities} href={`/investigations/${id}?tab=ENTITIES`} />
+        <CountCard label="RELATIONSHIPS" value={investigation._count?.relationships} href={`/investigations/${id}?tab=RELATIONSHIPS`} />
+        <CountCard label="EVIDENCE" value={investigation._count?.evidence} href={`/investigations/${id}?tab=EVIDENCE`} />
+        <CountCard label="TASKS" value={investigation._count?.tasks} href={`/investigations/${id}?tab=TASKS`} />
+      </section>
+
+      <section className="panel p-4" aria-labelledby="investigation-actions">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div>
+            <div className="mono-label text-phosphor">CASE OPERATIONS</div>
+            <h2 id="investigation-actions" className="mt-1 font-mono text-sm tracking-wide text-slate-100">QUICK ACTIONS</h2>
+          </div>
+          <span className="text-xs text-slate-tech">Actions stay scoped to this investigation.</span>
+        </div>
+        <div className="mt-3 flex flex-wrap gap-2">
+          <ActionLink href={`/investigations/${id}?tab=ENTITIES`} icon={<Plus />} label="ADD ENTITY" />
+          <ActionLink href={`/investigations/${id}?tab=EVIDENCE`} icon={<Upload />} label="ADD EVIDENCE" />
+          <ActionLink href={`/investigations/${id}?tab=TASKS`} icon={<CheckSquare />} label="CREATE TASK" />
+          <ActionLink href={`/graph?investigationId=${id}`} icon={<GitBranch />} label="OPEN GRAPH" />
+          <ActionLink href={`/map?investigationId=${id}`} icon={<Map />} label="OPEN MAP" />
+          <ActionLink href={`/assistant?investigationId=${id}`} icon={<BrainCircuit />} label="ASK ASSISTANT" />
+          <ActionLink href={`/reports?investigationId=${id}`} icon={<FileText />} label="CREATE REPORT" />
+        </div>
+      </section>
+
       <nav className="flex gap-1 overflow-x-auto border-b border-void-line pb-px" aria-label="Investigation sections">
         {SECTIONS.map((key) => (
           <button
@@ -194,7 +231,29 @@ function SectionBody({ section, id }: { section: Section; id: string }) {
       return <ActivityTab id={id} />;
     case 'TIMELINE':
       return <TimelineWorkspace investigationId={id} />;
+    case 'GRAPH':
+      return <Link href={`/graph?investigationId=${id}`} className="tech-button">OPEN KNOWLEDGE GRAPH</Link>;
+    case 'REPORTS':
+      return <Link href={`/reports?investigationId=${id}`} className="tech-button">OPEN REPORTS</Link>;
     default:
       return null;
   }
+}
+
+function CountCard({ label, value, href }: { label: string; value?: number; href: string }) {
+  return (
+    <Link href={href} className="panel surface-hover p-3 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-phosphor">
+      <div className="mono-label">{label}</div>
+      <div className="mt-1 font-mono text-xl text-slate-100">{value ?? '—'}</div>
+    </Link>
+  );
+}
+
+function ActionLink({ href, icon, label }: { href: string; icon: React.ReactNode; label: string }) {
+  return (
+    <Link href={href} className="tech-button text-[10px] uppercase tracking-wider">
+      {icon}
+      {label}
+    </Link>
+  );
 }

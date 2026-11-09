@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
-import { Plus } from 'lucide-react';
+import { Plus, Search, X } from 'lucide-react';
 import { useCreateEntity, useEntities } from '@/lib/queries';
 import { ApiError } from '@/lib/api-client';
 import { useAuth } from '@/lib/auth-store';
@@ -19,10 +19,12 @@ export default function EntitiesPage() {
   const has = useAuth((s) => s.has);
   const [type, setType] = useState<string>('');
   const [status, setStatus] = useState<string>('');
+  const [q, setQ] = useState('');
   const [showCreate, setShowCreate] = useState(false);
   const query = useEntities({
     ...(type ? { type } : {}),
     ...(status ? { status } : {}),
+    ...(q ? { q } : {}),
     limit: 60,
   });
 
@@ -46,6 +48,10 @@ export default function EntitiesPage() {
 
       <Panel title="ENTITY REGISTER">
         <div className="flex flex-wrap items-center gap-3">
+          <label className="relative min-w-[220px] flex-1">
+            <Search className="pointer-events-none absolute left-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-slate-tech/70" />
+            <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search entities…" className="tech-input pl-9" aria-label="Search entities" />
+          </label>
           <span className="mono-label">TYPE</span>
           <select value={type} onChange={(e) => setType(e.target.value)} className="tech-input w-auto py-1.5 text-xs" aria-label="Filter by type">
             <option value="">Any type</option>
@@ -58,15 +64,26 @@ export default function EntitiesPage() {
             <option value="ARCHIVED">ARCHIVED</option>
           </select>
           <span className="ml-auto font-mono text-[11px] text-slate-tech/70">{query.data?.total ?? 0} ENTITIES</span>
+          {(q || type || status) && (
+            <button type="button" className="tech-button px-2 py-1 text-[10px]" onClick={() => { setQ(''); setType(''); setStatus(''); }}>
+              <X className="h-3 w-3" /> CLEAR
+            </button>
+          )}
         </div>
 
         <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
           {query.isLoading ? (
             <div className="col-span-full"><Spinner label="Reading entities" /></div>
-          ) : (query.data?.items ?? []).length === 0 ? (
-            <p className="col-span-full py-10 text-center font-mono text-xs uppercase tracking-widest text-slate-tech/70">
-              No entities match
+          ) : query.isError ? (
+            <p className="col-span-full py-10 text-center font-mono text-xs uppercase tracking-widest text-amber-signal" role="alert">
+              Entity register unavailable
             </p>
+          ) : (query.data?.items ?? []).length === 0 ? (
+            <div className="col-span-full flex flex-col items-center gap-2 py-10 text-center">
+              <span className="mono-label">NO MATCHING ENTITIES</span>
+              <span className="text-sm text-slate-tech">Try clearing filters or add an entity to begin analysis.</span>
+              {has('entity.create') && <Button variant="primary" onClick={() => setShowCreate(true)}><Plus className="h-4 w-4" /> ADD ENTITY</Button>}
+            </div>
           ) : (
             (query.data?.items ?? []).map((entity) => {
               const row = entity as {

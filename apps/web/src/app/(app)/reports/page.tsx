@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
+import { useSearchParams } from 'next/navigation';
 import { BarChart3, FileText, Plus, ShieldCheck } from 'lucide-react';
 import { useReports, useReportTemplates, useCreateReportFromTemplate } from '@/lib/queries';
 import { useAuth } from '@/lib/auth-store';
@@ -28,8 +29,10 @@ interface ReportItem {
 
 /** Report builder landing — list reports + create from template (§21, §26). */
 export default function ReportsPage() {
+  const searchParams = useSearchParams();
+  const investigationId = searchParams.get('investigationId') ?? undefined;
   const has = useAuth((s) => s.has);
-  const reports = useReports();
+  const reports = useReports({ investigationId });
   const templates = useReportTemplates();
   const createFromTemplate = useCreateReportFromTemplate();
   const [pickerOpen, setPickerOpen] = useState(false);
@@ -55,7 +58,7 @@ export default function ReportsPage() {
   const submit = () => {
     if (!title.trim() || !templateId) return;
     createFromTemplate.mutate(
-      { title: title.trim(), templateId },
+      { title: title.trim(), templateId, ...(investigationId ? { investigationId } : {}) },
       {
         onSuccess: (data) => {
           setPickerOpen(false);
@@ -72,7 +75,7 @@ export default function ReportsPage() {
     <div className="space-y-4">
       <header className="flex flex-wrap items-end justify-between gap-3 border-b border-void-line/70 pb-3">
         <div><div className="mono-label flex items-center gap-2 text-phosphor"><FileText className="h-3.5 w-3.5" /> DISSEMINATION / DOCUMENT CONTROL</div><h1 className="mt-1 font-mono text-xl tracking-wide text-slate-100">REPORT ARCHIVE</h1></div>
-        <span className="mono-label">{items.length} LOADED · {reports.data?.total ?? items.length} TOTAL</span>
+        <span className="mono-label">{investigationId ? 'INVESTIGATION SCOPE · ' : ''}{items.length} LOADED · {reports.data?.total ?? items.length} TOTAL</span>
       </header>
       <section className="grid gap-3 sm:grid-cols-3">
         <ReportMetric icon={<FileText className="h-4 w-4" />} label="LOADED REPORTS" value={reports.isLoading ? '—' : items.length} />

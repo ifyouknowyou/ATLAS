@@ -1,5 +1,6 @@
 import { Global, Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
+import { resolve } from 'node:path';
 import { APP_CONFIG } from '../config/app-config';
 import { AppConfig, validateEnv } from '../config/env';
 
@@ -13,6 +14,7 @@ import { AppConfig, validateEnv } from '../config/env';
     ConfigModule.forRoot({
       isGlobal: true,
       cache: true,
+      envFilePath: [resolve(process.cwd(), '.env'), resolve(process.cwd(), '../../.env')],
       validate: validateEnv,
     }),
   ],

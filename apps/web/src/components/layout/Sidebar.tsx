@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useState } from 'react';
-import { PanelLeftClose, PanelLeftOpen } from 'lucide-react';
+import { ChevronDown, PanelLeftClose, PanelLeftOpen } from 'lucide-react';
 import { navSections } from '@/lib/navigation';
 import { useAuth } from '@/lib/auth-store';
 import { cn } from '@/lib/cn';
@@ -12,6 +12,9 @@ export function Sidebar({ mobileOpen = false, onClose }: { mobileOpen?: boolean;
   const pathname = usePathname();
   const has = useAuth((s) => s.has);
   const [collapsed, setCollapsed] = useState(false);
+  const [expanded, setExpanded] = useState<Record<string, boolean>>(() =>
+    Object.fromEntries(navSections.map((section) => [section.title, true])),
+  );
   const activeHref = navSections.flatMap((section) => section.items)
     .filter((item) => pathname === item.href || pathname.startsWith(`${item.href}/`))
     .sort((left, right) => right.href.length - left.href.length)[0]?.href;
@@ -42,8 +45,18 @@ export function Sidebar({ mobileOpen = false, onClose }: { mobileOpen?: boolean;
       <nav className={cn('flex-1 overflow-y-auto pb-4', collapsed ? 'px-2' : 'px-3')}>
         {navSections.map((section) => (
           <div key={section.title} className="mt-4">
-            {!collapsed && <div className="mono-label px-2 pb-2">{section.title}</div>}
-            <ul className="space-y-0.5">
+            {!collapsed && (
+              <button
+                type="button"
+                className="group mb-1 flex w-full items-center justify-between rounded px-2 py-1 text-left focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-phosphor"
+                onClick={() => setExpanded((current) => ({ ...current, [section.title]: !current[section.title] }))}
+                aria-expanded={expanded[section.title]}
+              >
+                <span className="mono-label">{section.title}</span>
+                <ChevronDown className={cn('h-3 w-3 text-slate-tech/60 transition-transform group-hover:text-slate-100', !expanded[section.title] && '-rotate-90')} />
+              </button>
+            )}
+            <ul className={cn('space-y-0.5', !collapsed && !expanded[section.title] && 'hidden')}>
               {section.items.map((item) => {
                 const active = activeHref === item.href;
                 const hidden = item.permission && !has(item.permission);

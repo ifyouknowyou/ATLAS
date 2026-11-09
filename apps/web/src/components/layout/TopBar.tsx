@@ -2,7 +2,7 @@
 
 import { usePathname, useRouter } from 'next/navigation';
 import { useState } from 'react';
-import { Command, Menu, Search, UserCircle2 } from 'lucide-react';
+import { Command, HelpCircle, Menu, Search, UserCircle2 } from 'lucide-react';
 import { useAuth } from '@/lib/auth-store';
 import { pageTitleFor } from '@/lib/navigation';
 import { NotificationBell } from '@/components/ui/NotificationBell';
@@ -24,9 +24,20 @@ export function TopBar({ onMenu }: { onMenu?: () => void }) {
         <button type="button" className="atlas-menu-button tech-button p-2 lg:hidden" onClick={onMenu} aria-label="Open navigation">
           <Menu className="h-4 w-4" />
         </button>
-        <h1 className="font-mono text-sm tracking-[0.18em] text-slate-200">
-          {pageTitleFor(pathname)}
-        </h1>
+        <div className="min-w-0">
+          <div className="flex items-center gap-2">
+            <h1 className="font-mono text-sm tracking-[0.18em] text-slate-200">
+              {pageTitleFor(pathname)}
+            </h1>
+            <span className="hidden text-slate-tech/40 sm:inline">/</span>
+            <span className="hidden max-w-[220px] truncate font-mono text-[10px] uppercase tracking-widest text-slate-tech sm:inline">
+              {breadcrumbFor(pathname)}
+            </span>
+          </div>
+          <span className="hidden font-mono text-[9px] uppercase tracking-widest text-slate-tech/60 lg:block">
+            {principal?.workspaceId ? `Workspace ${principal.workspaceId.slice(0, 8)}` : 'No active workspace'}
+          </span>
+        </div>
         <span className="hidden rounded border border-phosphor-faint/20 px-1.5 py-0.5 font-mono text-[9px] uppercase tracking-widest text-phosphor-dim sm:inline">
           INTELLIGENCE OPERATIONS
         </span>
@@ -51,6 +62,15 @@ export function TopBar({ onMenu }: { onMenu?: () => void }) {
         </button>
 
         <NotificationBell />
+        <button
+          type="button"
+          onClick={() => router.push('/assistant')}
+          className="hidden rounded border border-void-line p-2 text-slate-tech transition-colors hover:border-phosphor-faint hover:text-phosphor sm:block"
+          aria-label="Open ATLAS assistant help"
+          title="Open assistant help"
+        >
+          <HelpCircle className="h-4 w-4" />
+        </button>
 
         <div className="flex items-center gap-2 rounded border border-void-line px-2.5 py-1.5">
           <UserCircle2 className="h-4 w-4 text-phosphor-dim" />
@@ -64,6 +84,12 @@ export function TopBar({ onMenu }: { onMenu?: () => void }) {
       </div>
     </header>
   );
+}
+
+function breadcrumbFor(pathname: string): string {
+  const segments = pathname.split('/').filter(Boolean);
+  if (segments.length < 2) return 'Overview';
+  return segments.slice(1).map((segment) => segment.replace(/-/g, ' ')).join(' / ');
 }
 
 function personaLabel(principal: {

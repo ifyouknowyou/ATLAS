@@ -609,7 +609,7 @@ export function useTimeline(params?: {
 // ---------------------------------------------------------------------------
 
 export interface AiSourceRef {
-  kind: 'ENTITY' | 'EVIDENCE' | 'NOTE';
+  kind: 'ENTITY' | 'EVIDENCE' | 'NOTE' | 'WEB';
   id: string;
   title: string;
   snippet?: string;

@@ -1,7 +1,7 @@
 'use client';
 
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { useEffect, useState, useRef } from 'react';
+import { useEffect, useRef } from 'react';
 import { useAuth } from '@/lib/auth-store';
 
 const queryClient = new QueryClient({
@@ -56,11 +56,6 @@ function BootScreen() {
 }
 
 export function Providers({ children }: { children: React.ReactNode }) {
-  const [mounted] = useState(() => typeof window !== 'undefined');
-  if (!mounted) {
-    // Match server HTML during hydration to avoid a flash paint.
-    return <BootScreen />;
-  }
   return (
     <QueryClientProvider client={queryClient}>
       <AuthHydrator>{children}</AuthHydrator>

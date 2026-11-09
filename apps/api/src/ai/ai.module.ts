@@ -10,6 +10,8 @@ import {
   AnthropicClaudeProvider,
   DisabledClaudeProvider,
 } from './claude.provider';
+import { GeminiProvider } from './gemini.provider';
+import { TavilyResearchService } from './tavily-research.service';
 
 /**
  * AI Intelligence Engine (Phase 4).
@@ -23,13 +25,19 @@ import {
   providers: [
     AiService,
     RetrievalService,
+    TavilyResearchService,
     {
       provide: CLAUDE_PROVIDER,
       inject: [APP_CONFIG],
-      useFactory: (config: AppConfig) =>
-        config.anthropicApiKey
-          ? new AnthropicClaudeProvider(config)
-          : new DisabledClaudeProvider(),
+      useFactory: (config: AppConfig) => {
+        if (config.aiProvider === 'gemini' && config.geminiApiKey) {
+          return new GeminiProvider(config);
+        }
+        if (config.aiProvider === 'anthropic' && config.anthropicApiKey) {
+          return new AnthropicClaudeProvider(config);
+        }
+        return new DisabledClaudeProvider();
+      },
     },
   ],
   exports: [AiService, RetrievalService, CLAUDE_PROVIDER],

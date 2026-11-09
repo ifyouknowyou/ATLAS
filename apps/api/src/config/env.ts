@@ -17,6 +17,14 @@ export interface AppConfig {
   anthropicApiKey?: string;
   /** Claude model to use for the assistant (default claude-opus-5). */
   anthropicModel: string;
+  /** Primary AI provider. Supported values: gemini and anthropic. */
+  aiProvider?: 'gemini' | 'anthropic';
+  geminiApiKey?: string;
+  geminiModel?: string;
+  tavilyApiKey?: string;
+  aiTemperature?: number;
+  aiMaxOutputTokens?: number;
+  aiEnableWebResearch?: boolean;
   /** Root directory for evidence file storage (Phase 5). */
   storageDir: string;
   /** Maximum accepted upload size in MiB (Phase 5). */
@@ -58,6 +66,20 @@ function intValue(value: unknown, fallback: number, key: string): number {
   return parsed;
 }
 
+function floatValue(value: unknown, fallback: number, key: string): number {
+  if (value === undefined || value === '') return fallback;
+  const parsed = Number(value);
+  if (!Number.isFinite(parsed)) {
+    throw new Error(`Environment variable ${key} must be a number`);
+  }
+  return parsed;
+}
+
+function boolValue(value: unknown, fallback: boolean): boolean {
+  if (value === undefined || value === '') return fallback;
+  return value === true || value === 'true' || value === '1';
+}
+
 /** Validates a raw env object and returns a fully typed AppConfig. */
 export function validateEnv(env: RawEnv): AppConfig {
   const nodeEnv = env.NODE_ENV ?? 'development';
@@ -83,6 +105,19 @@ export function validateEnv(env: RawEnv): AppConfig {
     anthropicModel: isNonEmptyString(env.ANTHROPIC_MODEL)
       ? env.ANTHROPIC_MODEL
       : 'claude-opus-5',
+    aiProvider: env.AI_PROVIDER === 'anthropic' ? 'anthropic' : 'gemini',
+    geminiApiKey: isNonEmptyString(env.GEMINI_API_KEY)
+      ? env.GEMINI_API_KEY
+      : undefined,
+    geminiModel: isNonEmptyString(env.GEMINI_MODEL)
+      ? env.GEMINI_MODEL
+      : 'gemini-2.0-flash',
+    tavilyApiKey: isNonEmptyString(env.TAVILY_API_KEY)
+      ? env.TAVILY_API_KEY
+      : undefined,
+    aiTemperature: floatValue(env.AI_TEMPERATURE, 0.3, 'AI_TEMPERATURE'),
+    aiMaxOutputTokens: intValue(env.AI_MAX_OUTPUT_TOKENS, 4096, 'AI_MAX_OUTPUT_TOKENS'),
+    aiEnableWebResearch: boolValue(env.AI_ENABLE_WEB_RESEARCH, true),
     storageDir: isNonEmptyString(env.ATLAS_STORAGE_DIR)
       ? env.ATLAS_STORAGE_DIR
       : '/home/who/All Project/ATLAS/apps/api/.storage',

@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import { Archive, Search, ShieldCheck } from 'lucide-react';
-import { useEvidence } from '@/lib/queries';
+import { useEvidence, useInvestigations } from '@/lib/queries';
 import { useAuth } from '@/lib/auth-store';
 import { Panel } from '@/components/ui/Panel';
 import { Spinner } from '@/components/ui/Spinner';
@@ -39,12 +39,15 @@ export default function EvidenceVaultPage() {
   const [status, setStatus] = useState('');
   const [classification, setClassification] = useState('');
   const [limit, setLimit] = useState(60);
+  const [investigationId, setInvestigationId] = useState('');
+  const investigations = useInvestigations({ limit: 100 });
 
   const query = useEvidence({
     type: type || undefined,
     status: status || undefined,
     classification,
     q: q || undefined,
+    investigationId: investigationId || undefined,
     limit,
   });
 
@@ -67,6 +70,7 @@ export default function EvidenceVaultPage() {
       <Panel title="INTAKE & FILTERS">
         {has('evidence.create') && (
           <EvidenceDropzone
+            investigationId={investigationId || undefined}
             onUploaded={() => {
               // react-query invalidates ['evidence'] via the mutation.
             }}
@@ -98,6 +102,12 @@ export default function EvidenceVaultPage() {
             <option value="">ALL CLASSIFICATION</option>
             {CLASSIFICATIONS.map((c) => (
               <option key={c} value={c}>{c}</option>
+            ))}
+          </select>
+          <select value={investigationId} onChange={(e) => setInvestigationId(e.target.value)} className="tech-input" aria-label="Filter by investigation">
+            <option value="">ALL INVESTIGATIONS</option>
+            {(investigations.data?.items ?? []).map((investigation) => (
+              <option key={String(investigation.id)} value={String(investigation.id)}>{String(investigation.title)}</option>
             ))}
           </select>
         </div>

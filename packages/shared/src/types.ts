@@ -377,7 +377,7 @@ export type AiRole = 'USER' | 'ASSISTANT';
 
 /** A source the AI assistant grounded an answer on. */
 export interface AiSourceRef {
-  kind: 'ENTITY' | 'EVIDENCE' | 'NOTE';
+  kind: 'ENTITY' | 'EVIDENCE' | 'NOTE' | 'WEB';
   id: string;
   title: string;
   snippet?: string;

@@ -7,6 +7,7 @@ export default function CommandPalette() {
   const router = useRouter();
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState('');
+  const [activeIndex, setActiveIndex] = useState(0);
   const inputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -27,6 +28,7 @@ export default function CommandPalette() {
   useEffect(() => {
     if (open) {
       inputRef.current?.focus();
+      setActiveIndex(0);
     }
   }, [open]);
 
@@ -39,8 +41,8 @@ export default function CommandPalette() {
     { label: 'Alerts', shortcut: null, action: () => router.push('/intelligence/alerts') },
     { label: 'Evidence', shortcut: 'E', action: () => router.push('/evidence') },
     { label: 'Reports', shortcut: 'R', action: () => router.push('/reports') },
-    { label: 'AI', shortcut: null, action: () => router.push('/ai') },
-    { label: 'Administration', shortcut: null, action: () => router.push('/admin/operations') },
+    { label: 'AI Assistant', shortcut: null, action: () => router.push('/assistant') },
+    { label: 'Administration', shortcut: null, action: () => router.push('/admin') },
   ];
 
   if (!open) return null;
@@ -48,24 +50,47 @@ export default function CommandPalette() {
   const filtered = commands.filter((c) => c.label.toLowerCase().includes(query.toLowerCase()));
 
   return (
-    <div
-      className="fixed inset-0 z-50 flex items-start justify-center pt-24"
-      onMouseDown={(e) => e.stopPropagation()}
-    >
+    <div className="fixed inset-0 z-50 flex items-start justify-center pt-24" onMouseDown={(e) => e.stopPropagation()}>
       <div className="fixed inset-0 bg-black/70 backdrop-blur-sm" onClick={() => setOpen(false)} />
-      <div className="relative z-10 w-full max-w-lg rounded-lg border border-gray-700 bg-gray-900 p-4 shadow-2xl">
+      <div
+        className="relative z-10 w-full max-w-lg rounded-lg border border-void-line bg-void-panel p-4 shadow-2xl"
+        role="dialog"
+        aria-modal="true"
+        aria-label="ATLAS command palette"
+      >
         <input
           ref={inputRef}
           placeholder="Type a command..."
-          className="mb-2 w-full rounded-md bg-gray-800 px-3 py-2 text-sm text-white outline-none"
+          className="tech-input mb-2"
+          role="combobox"
+          aria-controls="atlas-command-list"
+          aria-expanded="true"
+          onKeyDown={(event) => {
+            if (event.key === 'ArrowDown') {
+              event.preventDefault();
+              setActiveIndex((index) => Math.min(index + 1, filtered.length - 1));
+            } else if (event.key === 'ArrowUp') {
+              event.preventDefault();
+              setActiveIndex((index) => Math.max(index - 1, 0));
+            } else if (event.key === 'Enter' && filtered[activeIndex]) {
+              event.preventDefault();
+              filtered[activeIndex].action();
+              setOpen(false);
+            }
+          }}
           value={query}
-          onChange={(e) => setQuery(e.target.value)}
+          onChange={(e) => {
+            setQuery(e.target.value);
+            setActiveIndex(0);
+          }}
         />
-        <ul className="max-h-80 divide-y divide-gray-700 overflow-auto text-sm">
+        <ul id="atlas-command-list" className="max-h-80 divide-y divide-void-line overflow-auto text-sm" role="listbox">
           {filtered.map((cmd, idx) => (
             <li key={idx}>
               <button
-                className="flex w-full items-center justify-between px-3 py-2 hover:bg-gray-800"
+                className={`flex w-full items-center justify-between rounded px-3 py-2 text-left ${idx === activeIndex ? 'bg-phosphor-dim/15 text-phosphor' : 'text-slate-200 hover:bg-void-raised'}`}
+                role="option"
+                aria-selected={idx === activeIndex}
                 onClick={() => {
                   cmd.action();
                   setOpen(false);

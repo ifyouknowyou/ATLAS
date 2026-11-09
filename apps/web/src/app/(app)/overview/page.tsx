@@ -22,6 +22,7 @@ import { Panel } from '@/components/ui/Panel';
 import { Spinner } from '@/components/ui/Spinner';
 import { StatusBadge } from '@/components/ui/StatusBadge';
 import { statusTone, priorityTone, formatWhen } from '@/lib/presentation';
+import { WelcomeCard } from '@/components/onboarding/WelcomeCard';
 
 export default function OverviewPage() {
   const router = useRouter();
@@ -79,6 +80,8 @@ export default function OverviewPage() {
           </span>
         </div>
       </header>
+
+      <WelcomeCard />
 
       {/* Intelligence metrics */}
       <section className="grid grid-cols-2 gap-4 lg:grid-cols-4">
@@ -180,7 +183,32 @@ export default function OverviewPage() {
           </div>
         </Panel>
       </section>
+
+      <section className="panel p-4 sm:p-5" aria-labelledby="quick-actions-title">
+        <div className="flex flex-wrap items-end justify-between gap-3">
+          <div>
+            <div className="mono-label text-phosphor">OPERATIONS</div>
+            <h2 id="quick-actions-title" className="mt-1 font-mono text-sm tracking-wide text-slate-100">QUICK ACTIONS</h2>
+          </div>
+          <span className="text-xs text-slate-tech">Open an existing workflow without leaving command.</span>
+        </div>
+        <div className="mt-4 grid gap-2 sm:grid-cols-2 lg:grid-cols-4">
+          <QuickAction href="/investigations" label="Review investigations" detail="CASE REGISTER" />
+          <QuickAction href="/evidence" label="Inspect evidence" detail="EVIDENCE VAULT" />
+          <QuickAction href="/graph" label="Explore relationships" detail="KNOWLEDGE GRAPH" />
+          <QuickAction href="/reports" label="Open reports" detail="ANALYTICAL DELIVERY" />
+        </div>
+      </section>
     </div>
+  );
+}
+
+function QuickAction({ href, label, detail }: { href: string; label: string; detail: string }) {
+  return (
+    <Link href={href} className="rounded border border-void-line bg-void-raised/60 px-3 py-3 transition-colors hover:border-phosphor-faint/50 hover:bg-phosphor-dim/10 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-phosphor">
+      <div className="text-sm text-slate-100">{label}</div>
+      <div className="mt-1 font-mono text-[9px] uppercase tracking-widest text-slate-tech">{detail}</div>
+    </Link>
   );
 }
 

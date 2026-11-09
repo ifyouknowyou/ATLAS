@@ -16,7 +16,7 @@
     "typecheck": "npm run build -w @atlas/shared && npm run typecheck -w @atlas/api && npm run typecheck -w @atlas/web",
     "lint": "npm run lint -w @atlas/api && npm run lint -w @atlas/web",
     "test": "npm run build -w @atlas/shared && npm run test -w @atlas/shared && npm run test -w @atlas/api && npm run test -w @atlas/web",
-    "test:unit": "npm run test:unit -w @atlas/shared && npm run test:unit -w @atlas/api",
+    "test:unit": "npm run test -w @atlas/shared && npm run test:unit -w @atlas/api",
     "test:integration": "npm run test:integration -w @atlas/api",
     "db:up": "docker compose up -d atlas-postgres",
     "db:sync": "docker compose up -d atlas-postgres atlas-postgres-test",

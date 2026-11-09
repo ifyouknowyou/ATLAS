@@ -1,5 +1,6 @@
 import {
   Inject,
+  Optional,
   Injectable,
   ServiceUnavailableException,
 } from '@nestjs/common';
@@ -10,6 +11,7 @@ import { InvestigationAccessService } from '../investigations/investigation-acce
 import { ActivityService } from '../common/activity.service';
 import { CLAUDE_PROVIDER, type ClaudeProvider } from './claude.provider';
 import { RetrievalService } from './retrieval.service';
+import { TavilyResearchService } from './tavily-research.service';
 import { assistantSystemWithContext, summarizerSystemWithContext } from './prompts';
 
 const CHAT_MAX_TOKENS = 4096;
@@ -24,6 +26,7 @@ export class AiService {
     private readonly access: InvestigationAccessService,
     private readonly prisma: PrismaService,
     private readonly activity: ActivityService,
+    @Optional() private readonly research?: TavilyResearchService,
   ) {}
 
   /** Resolve the request's investigation scope; throws 403/404 when denied. */
@@ -61,8 +64,13 @@ export class AiService {
       investigationId: investigationId ?? undefined,
       terms,
     });
+    const webSources = this.research ? await this.research.search(input.message) : [];
+    const allSources = [...sources, ...webSources];
 
-    const system = assistantSystemWithContext(contextText, sources);
+    const system = assistantSystemWithContext(
+      `${contextText}\n\nWEB RESEARCH (unverified external sources):\n${webSources.map((source) => `- ${source.title}: ${source.snippet ?? source.id}`).join('\n') || '(none)'}`,
+      allSources,
+    );
     const messages = [
       ...(input.history ?? [])
         .filter((m) => m.content.trim().length > 0)
@@ -77,7 +85,7 @@ export class AiService {
     const { text: reply } = await this.provider.chat({ system, messages, maxTokens: CHAT_MAX_TOKENS });
 
     await this.persist(principal, investigationId, 'USER', input.message, null);
-    const assistantRow = await this.persist(principal, investigationId, 'ASSISTANT', reply, sources);
+    const assistantRow = await this.persist(principal, investigationId, 'ASSISTANT', reply, allSources);
 
     void this.activity
       .record(principal, {
@@ -87,7 +95,7 @@ export class AiService {
       })
       .catch(() => undefined);
 
-    return { reply, sources, messageId: assistantRow.id };
+    return { reply, sources: allSources, messageId: assistantRow.id };
   }
 
   /** Structured investigation summary (knowledge-graph reasoning). */

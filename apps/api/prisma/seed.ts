@@ -282,6 +282,10 @@ async function main(): Promise<void> {
       createdById: userId(ADMIN_EMAIL),
     },
   });
+  await prisma.membership.updateMany({
+    where: { organizationId: org.id },
+    data: { activeWorkspaceId: workspace.id },
+  });
 
   const adminId = userId(ADMIN_EMAIL);
   const analystId = userId(ANALYST_EMAIL);
